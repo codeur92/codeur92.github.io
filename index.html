@@ -8,8 +8,8 @@
             color: #ffffff;
             font-family: 'Segoe UI', Arial, sans-serif;
             text-align: center;
-            padding-top: 80px;
-            height: 100vh;
+            padding-top: 50px;
+            min-height: 100vh;
             margin: 0;
             transition: background 0.5s ease, color 0.5s ease;
         }
@@ -25,16 +25,47 @@
             margin-bottom: 10px;
         }
 
-        /* Style pour le message de bienvenue */
         #bienvenue {
             font-size: 1.5rem;
             color: #007AFF;
             font-weight: bold;
-            margin-bottom: 30px;
-            min-height: 35px; /* Évite que la page bouge quand le texte apparaît */
+            margin-bottom: 20px;
+            min-height: 35px;
         }
         body.mode-clair #bienvenue {
             color: #0056b3;
+        }
+
+        /* --- STYLE DE LA SECTION "À PROPOS" --- */
+        .about-section {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            max-width: 500px;
+            margin: 30px auto;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        body.mode-clair .about-section {
+            background-color: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        .about-section h2 {
+            margin-top: 0;
+            color: #FFD700;
+        }
+        body.mode-clair .about-section h2 {
+            color: #d4af37;
+        }
+        .badge {
+            background-color: #8A2BE2;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 15px;
         }
 
         .container {
@@ -64,7 +95,7 @@
         body.mode-clair .btn-mode { background-color: #000000; }
 
         .liens-section {
-            margin-top: 50px;
+            margin-top: 40px;
             padding: 20px;
         }
         .liens-section h2 {
@@ -87,6 +118,13 @@
     
     <div id="bienvenue"></div>
 
+    <div class="about-section">
+        <h2>À propos de moi 😎</h2>
+        <span class="badge">Développeur en herbe</span>
+        <p>Bienvenue sur mon espace ! Je m'appelle <strong>Codeur92</strong>.</p>
+        <p>Sur ce site, je teste des scripts, je crée des designs et je partage mes liens préférés. En ce moment, je kiffe coder des sites web et créer des projets sur Roblox ! 🎮⚡</p>
+    </div>
+
     <p>Ce site évolue en direct depuis mon Ordi !</p>
     
     <div class="container">
@@ -102,15 +140,11 @@
     </div>
 
     <script>
-        // Ce code se lance TOUT SEUL dès que la page s'ouvre
         window.onload = function() {
             let prenom = prompt("Salut ! C'est quoi ton prénom ?");
-            
-            // Si la personne a écrit quelque chose, on lui dit bienvenue
             if (prenom != null && prenom != "") {
                 document.getElementById("bienvenue").innerText = "Bienvenue sur mon site, " + prenom + " ! 👋";
             } else {
-                // Si elle n'a rien écrit, on met un message général
                 document.getElementById("bienvenue").innerText = "Bienvenue visiteur mystère ! 🕶️";
             }
         };
