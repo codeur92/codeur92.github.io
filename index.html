@@ -68,28 +68,36 @@
             margin-bottom: 15px;
         }
 
-        /* --- STYLE DU COMPTE À REBOURS --- */
+        /* --- STYLE DU COMPTE À REBOURS INTELLIGENT --- */
         .countdown-container {
             margin-top: 20px;
-            background: rgba(0, 0, 0, 0.2);
+            background: rgba(0, 0, 0, 0.3);
             padding: 15px;
             border-radius: 15px;
+            border: 2px solid #2ed573; /* Bordure verte comme les lignes de métro */
         }
         body.mode-clair .countdown-container {
-            background: rgba(255, 255, 255, 0.5);
+            background: rgba(255, 255, 255, 0.7);
         }
         .countdown-title {
             font-size: 1.1rem;
             font-weight: bold;
             margin-bottom: 10px;
             color: #ff4757;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
         #countdown {
-            font-size: 1.4rem;
-            font-family: monospace;
+            font-size: 1.6rem;
+            font-family: 'Courier New', Courier, monospace; /* Police rétro style écran de gare */
             font-weight: bold;
-            letter-spacing: 1px;
+            letter-spacing: 2px;
             color: #2ed573;
+            background-color: #000000;
+            padding: 10px;
+            border-radius: 8px;
+            display: inline-block;
+            box-shadow: inset 0 0 10px rgba(46, 213, 115, 0.5);
         }
 
         .container {
@@ -149,8 +157,8 @@
         <p>Sur ce site, je teste des scripts, je crée des designs et je partage mes liens préférés. En ce moment, je kiffe coder des sites web et créer des projets sur Roblox ! 🎮⚡</p>
         
         <div class="countdown-container">
-            <div class="countdown-title">Mon anniversaire (13 ans) ! 🎂🎉</div>
-            <div id="countdown">Chargement...</div>
+            <div class="countdown-title" id="countdown-title">Prochain Anniversaire ⏱️</div>
+            <div id="countdown">Calcul en cours...</div>
         </div>
     </div>
 
@@ -178,24 +186,43 @@
             }
         };
 
-        // Date objectif réglée sur le 19 juin 2026
-        const dateObjectif = new Date("June 19, 2026 00:00:00").getTime();
-
+        // --- SCRIPT "MÉTRO AUTOMATIQUE" INTELLIGENT ---
         const x = setInterval(function() {
-            const maintenant = new Date().getTime();
-            const distance = dateObjectif - maintenant;
+            const maintenant = new Date();
+            let anneeCible = maintenant.getFullYear();
+            
+            // On crée la date de ton anniversaire pour l'année en cours (19 juin)
+            let dateAnniv = new Date("June 19, " + anneeCible + " 00:00:00");
 
+            // Si le 19 juin de cette année est DÉJÀ passé, le système passe automatiquement à l'année d'après !
+            if (maintenant.getTime() > dateAnniv.getTime()) {
+                anneeCible = anneeCible + 1;
+                dateAnniv = new Date("June 19, " + anneeCible + " 00:00:00");
+            }
+
+            const distance = dateAnniv.getTime() - maintenant.getTime();
+
+            // Calcul du temps restant
             const jours = Math.floor(distance / (1000 * 60 * 60 * 24));
             const heures = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
             const secondes = Math.floor((distance % (1000 * 60)) / 1000);
 
+            // Détermination de l'âge automatique
+            // Si on vise 2026 tu auras 13 ans, si le script passe à 2027 tu auras 14 ans, etc.
+            const age = 13 + (anneeCible - 2026);
+
+            // On change le titre de la section de façon dynamique
+            document.getElementById("countdown-title").innerHTML = "Mon anniversaire (" + age + " ans) ! 🎂🎉";
+
+            // Affichage style écran LED du métro
             document.getElementById("countdown").innerHTML = jours + "j " + heures + "h " + minutes + "m " + secondes + "s";
 
-            if (distance < 0) {
-                clearInterval(x);
-                // MODIFICATION ICI : Message personnalisé pour tes 13 ans !
-                document.getElementById("countdown").innerHTML = "Joyeux Anniversaire ! J'ai 13 ans ! 🎈🎁";
+            // Si c'est EXACTEMENT le jour J (le 19 juin)
+            const aujourdHuiMois = maintenant.getMonth(); // 5 = Juin (car ça commence à 0)
+            const aujourdHuiJour = maintenant.getDate();
+            if (aujourdHuiMois === 5 && aujourdHuiJour === 19) {
+                document.getElementById("countdown").innerHTML = "À QUAI : JOYEUX ANNIVERSAIRE ! 🎈🎁";
             }
         }, 1000);
 
