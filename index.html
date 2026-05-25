@@ -136,8 +136,9 @@
             margin-bottom: 20px;
         }
         
-        .btn-youtube { background-color: #ff0000; }
-        .btn-youtube:hover { background-color: #cc0000; transform: scale(1.05); }
+        /* LA COULEUR D'ORIGINE BIEN DOUCE POUR YOUTUBE */
+        .btn-youtube { background-color: #ea4335; }
+        .btn-youtube:hover { background-color: #c5221f; transform: scale(1.05); }
 
         .btn-roblox { background-color: #000000; border: 1px solid #ffffff; }
         .btn-roblox:hover { background-color: #333333; transform: scale(1.05); }
@@ -185,12 +186,19 @@
                 document.body.classList.add("mode-clair");
             }
 
-            // --- CODE POUR LE PRÉNOM ---
-            let prenom = prompt("Salut ! C'est quoi ton prénom ?");
-            if (prenom != null && prenom != "") {
-                document.getElementById("bienvenue").innerText = "Bienvenue sur mon site, " + prenom + " ! 👋";
+            // --- CHARGEMENT ET BOUCLE DU PRÉNOM ---
+            let prenomSauvegarde = localStorage.getItem("prenomVisiteur");
+
+            if (prenomSauvegarde) {
+                document.getElementById("bienvenue").innerText = "Bienvenue sur mon site, " + prenomSauvegarde + " ! 👋";
             } else {
-                document.getElementById("bienvenue").innerText = "Bienvenue visiteur mystère ! 🕶️";
+                let prenom = "";
+                // Bloque tant que le visiteur laisse vide ou clique sur Annuler
+                while (prenom === "" || prenom === null) {
+                    prenom = prompt("Hé non ! Tu devez obligatoirement me donner ton prénom pour entrer : Envoie le blaze ! 🕶️");
+                }
+                localStorage.setItem("prenomVisiteur", prenom);
+                document.getElementById("bienvenue").innerText = "Bienvenue sur mon site, " + prenom + " ! 👋";
             }
         };
 
@@ -238,7 +246,6 @@
         function basculerMode() {
             document.body.classList.toggle("mode-clair");
             
-            // Sauvegarde du choix dans le navigateur
             if (document.body.classList.contains("mode-clair")) {
                 localStorage.setItem("theme", "clair");
             } else {
