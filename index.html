@@ -74,7 +74,7 @@
             background: rgba(0, 0, 0, 0.3);
             padding: 15px;
             border-radius: 15px;
-            border: 2px solid #2ed573; /* Bordure verte comme les lignes de métro */
+            border: 2px solid #2ed573;
         }
         body.mode-clair .countdown-container {
             background: rgba(255, 255, 255, 0.7);
@@ -89,7 +89,7 @@
         }
         #countdown {
             font-size: 1.6rem;
-            font-family: 'Courier New', Courier, monospace; /* Police rétro style écran de gare */
+            font-family: 'Courier New', Courier, monospace;
             font-weight: bold;
             letter-spacing: 2px;
             color: #2ed573;
@@ -165,7 +165,7 @@
     <p>Ce site évolue en direct depuis mon Ordi !</p>
     
     <div class="container">
-        <button class="btn-bleu" onclick="alerteMagique()">Bouton Magique ✨</button>
+        <button class="btn-bleu" onclick="infosMetro()">Info Réseau 🚇</button>
         <button class="btn-violet" onclick="changerCouleur()">Changer le titre 🎨</button>
         <button class="btn-mode" onclick="basculerMode()">Changer de Mode 🌓</button>
     </div>
@@ -186,15 +186,13 @@
             }
         };
 
-        // --- SCRIPT "MÉTRO AUTOMATIQUE" INTELLIGENT ---
+        // --- SCRIPT "MÉTRO AUTOMATIQUE" ---
         const x = setInterval(function() {
             const maintenant = new Date();
             let anneeCible = maintenant.getFullYear();
             
-            // On crée la date de ton anniversaire pour l'année en cours (19 juin)
             let dateAnniv = new Date("June 19, " + anneeCible + " 00:00:00");
 
-            // Si le 19 juin de cette année est DÉJÀ passé, le système passe automatiquement à l'année d'après !
             if (maintenant.getTime() > dateAnniv.getTime()) {
                 anneeCible = anneeCible + 1;
                 dateAnniv = new Date("June 19, " + anneeCible + " 00:00:00");
@@ -202,32 +200,26 @@
 
             const distance = dateAnniv.getTime() - maintenant.getTime();
 
-            // Calcul du temps restant
             const jours = Math.floor(distance / (1000 * 60 * 60 * 24));
             const heures = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
             const secondes = Math.floor((distance % (1000 * 60)) / 1000);
 
-            // Détermination de l'âge automatique
-            // Si on vise 2026 tu auras 13 ans, si le script passe à 2027 tu auras 14 ans, etc.
             const age = 13 + (anneeCible - 2026);
 
-            // On change le titre de la section de façon dynamique
             document.getElementById("countdown-title").innerHTML = "Mon anniversaire (" + age + " ans) ! 🎂🎉";
-
-            // Affichage style écran LED du métro
             document.getElementById("countdown").innerHTML = jours + "j " + heures + "h " + minutes + "m " + secondes + "s";
 
-            // Si c'est EXACTEMENT le jour J (le 19 juin)
-            const aujourdHuiMois = maintenant.getMonth(); // 5 = Juin (car ça commence à 0)
+            const aujourdHuiMois = maintenant.getMonth(); 
             const aujourdHuiJour = maintenant.getDate();
             if (aujourdHuiMois === 5 && aujourdHuiJour === 19) {
                 document.getElementById("countdown").innerHTML = "À QUAI : JOYEUX ANNIVERSAIRE ! 🎈🎁";
             }
         }, 1000);
 
-        function alerteMagique() {
-            alert("Toujours là, toujours opé ! 😎");
+        // MODIFICATION ICI : La nouvelle fonction du bouton
+        function infosMetro() {
+            alert("🚇 [RATP] Info Trafic - Ligne Codeur92 :\n\n• Le trafic est totalement régulier.\n• Prochain arrêt de rame : Station 13 Ans (le 19 Juin) !\n• Voyageurs à bord : Vous ! 🎒");
         }
 
         function changerCouleur() {
