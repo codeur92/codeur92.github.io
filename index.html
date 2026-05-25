@@ -68,6 +68,30 @@
             margin-bottom: 15px;
         }
 
+        /* --- STYLE DU COMPTE À REBOURS --- */
+        .countdown-container {
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.2);
+            padding: 15px;
+            border-radius: 15px;
+        }
+        body.mode-clair .countdown-container {
+            background: rgba(255, 255, 255, 0.5);
+        }
+        .countdown-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #ff4757;
+        }
+        #countdown {
+            font-size: 1.4rem;
+            font-family: monospace;
+            font-weight: bold;
+            letter-spacing: 1px;
+            color: #2ed573;
+        }
+
         .container {
             margin-top: 20px;
         }
@@ -123,6 +147,11 @@
         <span class="badge">Développeur en herbe</span>
         <p>Bienvenue sur mon espace ! Je m'appelle <strong>Codeur92</strong>.</p>
         <p>Sur ce site, je teste des scripts, je crée des designs et je partage mes liens préférés. En ce moment, je kiffe coder des sites web et créer des projets sur Roblox ! 🎮⚡</p>
+        
+        <div class="countdown-container">
+            <div class="countdown-title">Mon anniversaire (13 ans) ! 🎂🎉</div>
+            <div id="countdown">Chargement...</div>
+        </div>
     </div>
 
     <p>Ce site évolue en direct depuis mon Ordi !</p>
@@ -148,6 +177,27 @@
                 document.getElementById("bienvenue").innerText = "Bienvenue visiteur mystère ! 🕶️";
             }
         };
+
+        // Date objectif réglée sur le 19 juin 2026
+        const dateObjectif = new Date("June 19, 2026 00:00:00").getTime();
+
+        const x = setInterval(function() {
+            const maintenant = new Date().getTime();
+            const distance = dateObjectif - maintenant;
+
+            const jours = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const heures = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const secondes = Math.floor((distance % (1000 * 60)) / 1000);
+
+            document.getElementById("countdown").innerHTML = jours + "j " + heures + "h " + minutes + "m " + secondes + "s";
+
+            if (distance < 0) {
+                clearInterval(x);
+                // MODIFICATION ICI : Message personnalisé pour tes 13 ans !
+                document.getElementById("countdown").innerHTML = "Joyeux Anniversaire ! J'ai 13 ans ! 🎈🎁";
+            }
+        }, 1000);
 
         function alerteMagique() {
             alert("Toujours là, toujours opé ! 😎");
