@@ -45,6 +45,7 @@
             padding: 20px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: background-color 0.5s ease, border 0.5s ease;
         }
         body.mode-clair .about-section {
             background-color: rgba(0, 0, 0, 0.05);
@@ -135,8 +136,8 @@
             margin-bottom: 20px;
         }
         
-        .btn-google { background-color: #ea4335; }
-        .btn-google:hover { background-color: #c5221f; transform: scale(1.05); }
+        .btn-youtube { background-color: #ff0000; }
+        .btn-youtube:hover { background-color: #cc0000; transform: scale(1.05); }
 
         .btn-roblox { background-color: #000000; border: 1px solid #ffffff; }
         .btn-roblox:hover { background-color: #333333; transform: scale(1.05); }
@@ -172,13 +173,19 @@
 
     <div class="liens-section">
         <h2>Mes Liens Favoris 🌐</h2>
-       <!-- APRÈS -->
-<a href="https://www.youtube.com" target="_blank" class="lien-bouton btn-google">Regarder YouTube 📺</a>       
- <a href="https://www.roblox.com" target="_blank" class="lien-bouton btn-roblox">Jouer à Roblox 🎮</a>
+        <a href="https://www.youtube.com" target="_blank" class="lien-bouton btn-youtube">Regarder YouTube 📺</a>
+        <a href="https://www.roblox.com" target="_blank" class="lien-bouton btn-roblox">Jouer à Roblox 🎮</a>
     </div>
 
     <script>
         window.onload = function() {
+            // --- CHARGEMENT DU THÈME SAUVEGARDÉ ---
+            let themeSauvegarde = localStorage.getItem("theme");
+            if (themeSauvegarde === "clair") {
+                document.body.classList.add("mode-clair");
+            }
+
+            // --- CODE POUR LE PRÉNOM ---
             let prenom = prompt("Salut ! C'est quoi ton prénom ?");
             if (prenom != null && prenom != "") {
                 document.getElementById("bienvenue").innerText = "Bienvenue sur mon site, " + prenom + " ! 👋";
@@ -187,7 +194,7 @@
             }
         };
 
-        // --- SCRIPT "MÉTRO AUTOMATIQUE" ---
+        // --- SCRIPT DU COMPTE À REBOURS ---
         const x = setInterval(function() {
             const maintenant = new Date();
             let anneeCible = maintenant.getFullYear();
@@ -218,7 +225,7 @@
             }
         }, 1000);
 
-        // MODIFICATION ICI : La nouvelle fonction du bouton
+        // --- FONCTIONS DES BOUTONS ---
         function infosMetro() {
             alert("🚇 [RATP] Info Trafic - Ligne Codeur92 :\n\n• Le trafic est totalement régulier.\n• Prochain arrêt de rame : Station 13 Ans (le 19 Juin) !\n• Voyageurs à bord : Vous ! 🎒");
         }
@@ -230,6 +237,13 @@
 
         function basculerMode() {
             document.body.classList.toggle("mode-clair");
+            
+            // Sauvegarde du choix dans le navigateur
+            if (document.body.classList.contains("mode-clair")) {
+                localStorage.setItem("theme", "clair");
+            } else {
+                localStorage.setItem("theme", "sombre");
+            }
         }
     </script>
 
