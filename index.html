@@ -2,6 +2,8 @@
 <html>
 <head>
     <title>Mon Site Évolué !</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
     <style>
         body {
             background: linear-gradient(135deg, #1e1e2f, #2a2a40);
@@ -358,12 +360,10 @@
         <a href="https://www.roblox.com" target="_blank" class="lien-bouton btn-roblox">Jouer à Roblox 🎮</a>
     </div>
 
-    <!-- --- NOUVELLE ZONE DE CHAT --- -->
     <div class="chat-section">
-        <h2 style="margin-top:0; color:#00f5d4; font-size: 1.5rem;">💬 Le Tchat de la commu</h2>
+        <h2 style="margin-top:0; color:#00f5d4; font-size: 1.5rem;">💬 Le Vrai Tchat En Direct 🌍</h2>
         <div class="chat-box" id="box-messages">
-            <div class="chat-msg"><strong style="color: #ff9f43;">[Système] :</strong> Bienvenue dans le tchat ! Discute avec les autres connectés.</div>
-            <div class="chat-msg"><strong style="color: #48dbfb;">RobloxFan_99 :</strong> Yo ! Quelqu'un est chaud pour un BedWars après ? 🔥</div>
+            <div class="chat-msg"><strong style="color: #ff9f43;">[Système] :</strong> Connexion au serveur Supabase en cours...</div>
         </div>
         <div class="chat-input-area">
             <input type="text" id="input-message" class="chat-input" placeholder="Écris ton message ici..." onkeypress="verifierEntree(event)">
@@ -385,12 +385,18 @@
         </div>
     </div>
 
-    <!-- --- LE TRAIN QUI PASSE --- -->
     <div class="train-zone">
         <div class="train">🚂🚃🚃🚃🚃💨</div>
     </div>
 
     <script>
+        // --- CONFIGURATION DE TA BASE DE DONNÉES SUPABASE ---
+        const SUPABASE_URL = "https://wesdkbfbyelssqtbbjai.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indlc2RrYmZieWVsc3NxdGJiamFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDQwNDEsImV4cCI6MjA5NTM4MDA0MX0.kKZ3JrLcThrPaFzWCkXOSrOI6FMZ_TrGL9wqwxVizUs";
+        
+        // Initialisation de la connexion serveur
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
         let monNom = "Visiteur";
 
         window.onload = function() {
@@ -406,6 +412,7 @@
             if (prenomSauvegarde) {
                 monNom = prenomSauvegarde;
                 document.getElementById("bienvenue").innerText = "Bienvenue sur mon site, " + prenomSauvegarde + " ! 👋";
+                chargerAnciensMessages();
             } else {
                 let prenom = "";
                 while (prenom === "" || prenom === null) {
@@ -414,46 +421,71 @@
                 localStorage.setItem("prenomVisiteur", prenom);
                 monNom = prenom;
                 document.getElementById("bienvenue").innerText = "Bienvenue sur mon site, " + prenom + " ! 👋";
+                chargerAnciensMessages();
             }
+
+            // --- ACTIVER LE TEMPS RÉEL (ÉCOUTE DES NOUVEAUX MESSAGES) ---
+            _supabase
+                .channel('messages-live')
+                .on('postgres_changes', { event: 'INSERT', scheme: 'public', table: 'messages' }, payload => {
+                    afficherUnMessage(payload.new.nom, payload.new.texte);
+                })
+                .subscribe();
         };
 
-        // --- FONCTIONS DU TCHAT ---
-        function envoyerMessage() {
+        // --- FONCTIONS DU VRAI TCHAT ---
+        async function chargerAnciensMessages() {
+            let boite = document.getElementById("box-messages");
+            // On récupère les 50 derniers messages enregistrés sur Supabase
+            const { data, error } = await _supabase
+                .from('messages')
+                .select('nom, texte')
+                .order('id', { ascending: true })
+                .limit(50);
+
+            if (error) {
+                boite.innerHTML = `<div class="chat-msg" style="color:red;">❌ Erreur serveur : Vérifie que Row Level Security (RLS) est bien désactivé sur Supabase.</div>`;
+                console.error(error);
+                return;
+            }
+
+            boite.innerHTML = `<div class="chat-msg"><strong style="color: #2ed573;">[Serveur] :</strong> Connecté en temps réel ! 🚀</div>`;
+            data.forEach(msg => {
+                afficherUnMessage(msg.nom, msg.texte);
+            });
+        }
+
+        async function envoyerMessage() {
             let input = document.getElementById("input-message");
             let texte = input.value.trim();
             if (texte === "") return;
 
-            let boite = document.getElementById("box-messages");
-            
-            // Afficher ton message
-            boite.innerHTML += `<div class="chat-msg"><strong style="color: #ffff00;">${monNom} (Toi) :</strong> ${texte}</div>`;
-            input.value = "";
-            boite.scrollTop = boite.scrollHeight; // Fait défiler vers le bas
+            // Envoi des données vers ta table Supabase
+            const { error } = await _supabase
+                .from('messages')
+                .insert([{ nom: monNom, texte: texte }]);
 
-            // Réponse automatique des bots après 1,5 seconde !
-            setTimeout(reponseBot, 1500);
+            if (error) {
+                alert("Erreur d'envoi ! Vérifie ta table Supabase.");
+                console.error(error);
+            } else {
+                input.value = "";
+            }
+        }
+
+        function afficherUnMessage(nom, texte) {
+            let boite = document.getElementById("box-messages");
+            let couleurNom = (nom === monNom) ? "#ffff00" : "#48dbfb";
+            let affichageNom = (nom === monNom) ? `${nom} (Toi)` : nom;
+
+            boite.innerHTML += `<div class="chat-msg"><strong style="color: ${couleurNom};">${affichageNom} :</strong> ${texte}</div>`;
+            boite.scrollTop = boite.scrollHeight; // Défilement auto vers le bas
         }
 
         function verifierEntree(event) {
             if (event.key === "Enter") {
                 envoyerMessage();
             }
-        }
-
-        function reponseBot() {
-            let boite = document.getElementById("box-messages");
-            let reponses = [
-                "<strong style='color: #48dbfb;'>RobloxFan_99 :</strong> Mdrr pas mal ! Perso je préfère build des maps",
-                "<strong style='color: #1dd1a1;'>TrainMaster_X :</strong> Attendez, vous avez vu le train en bas du site ?? Trop stylé ! 🚄",
-                "<strong style='color: #ff6b6b;'>Anonyme92 :</strong> Welcome sur le site ! Le mini-jeu est super dur après 15 points 😭",
-                "<strong style='color: #a55eea;'>PixelArtiste :</strong> Quelqu'un sait coder en Python ici ?",
-                "<strong style='color: #48dbfb;'>RobloxFan_99 :</strong> Go faire une partie de Clicker Challenge pour voir qui a le meilleur score ! 🏆"
-            ];
-            
-            // Sélectionne une phrase au hasard
-            let phraseAuHasard = reponses[Math.floor(Math.random() * reponses.length)];
-            boite.innerHTML += `<div class="chat-msg">${phraseAuHasard}</div>`;
-            boite.scrollTop = boite.scrollHeight;
         }
 
         function gererMusique() {
