@@ -36,6 +36,38 @@
             color: #0056b3;
         }
 
+        /* --- STYLE DU LECTEUR DE MUSIQUE --- */
+        .music-player {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            max-width: 300px;
+            margin: 0 auto 20px auto;
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        body.mode-clair .music-player {
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        .music-info {
+            font-size: 0.9rem;
+            text-align: left;
+        }
+        .btn-music {
+            background-color: #ff007f;
+            padding: 8px 15px !important;
+            font-size: 14px !important;
+            margin: 0 !important;
+            box-shadow: 0 4px 10px rgba(255, 0, 127, 0.3);
+        }
+        .btn-music:hover {
+            background-color: #d00068;
+            transform: scale(1.05);
+        }
+
         .about-section {
             background-color: rgba(255, 255, 255, 0.05);
             border-radius: 20px;
@@ -176,9 +208,7 @@
             display: none;
             margin: 0;
         }
-        #target-btn:active {
-            transform: scale(0.9);
-        }
+        #target-btn:active { transform: scale(0.9); }
         .game-stats {
             display: flex;
             justify-content: space-around;
@@ -198,6 +228,17 @@
     <h1>Mon premier site 🚀</h1>
     
     <div id="bienvenue"></div>
+
+    <!-- --- BOÎTE DU LECTEUR DE MUSIQUE --- -->
+    <div class="music-player">
+        <div class="music-info">
+            <span style="font-weight: bold; color: #ff007f;">🎵 Radio-Codeur</span><br>
+            <small style="opacity: 0.8;">Synthwave Chill</small>
+        </div>
+        <!-- Balise audio cachée avec une musique libre de droits en boucle -->
+        <audio id="mon-audio" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" loop></audio>
+        <button class="btn-music" id="btn-play-pause" onclick="gererMusique()">Play ▶️</button>
+    </div>
 
     <div class="about-section">
         <h2>À propos de moi 😎</h2>
@@ -225,7 +266,6 @@
         <a href="https://www.roblox.com" target="_blank" class="lien-bouton btn-roblox">Jouer à Roblox 🎮</a>
     </div>
 
-    <!-- --- SECTION DU NOUVEAU MINI-JEU --- -->
     <div class="game-section">
         <h2>🎮 Réflexe Clicker Challenge</h2>
         <div class="game-stats">
@@ -247,7 +287,6 @@
                 document.body.classList.add("mode-clair");
             }
 
-            // Charger le record du jeu
             let recordSauve = localStorage.getItem("clickerHighScore") || 0;
             document.getElementById("high-score").innerText = recordSauve;
 
@@ -264,6 +303,22 @@
             }
         };
 
+        // --- FONCTION POUR LA MUSIQUE ---
+        function gererMusique() {
+            const audio = document.getElementById("mon-audio");
+            const bouton = document.getElementById("btn-play-pause");
+
+            if (audio.paused) {
+                audio.play();
+                bouton.innerText = "Pause ⏸️";
+                bouton.style.backgroundColor = "#555555"; // change de couleur quand ça joue
+            } else {
+                audio.pause();
+                bouton.innerText = "Play ▶️";
+                bouton.style.backgroundColor = "#ff007f";
+            }
+        }
+
         // --- CODE DU MINI-JEU ---
         let score = 0;
         let tempsRestant = 10;
@@ -272,7 +327,6 @@
 
         function lancerJeu() {
             if (jeuEnCours) return;
-            
             jeuEnCours = true;
             score = 0;
             tempsRestant = 10;
@@ -280,30 +334,22 @@
             document.getElementById("game-timer").innerText = tempsRestant;
             document.getElementById("start-game-btn").style.display = "none";
             document.getElementById("target-btn").style.display = "block";
-            
             deplacerCible();
 
             chrono = setInterval(function() {
                 tempsRestant--;
                 document.getElementById("game-timer").innerText = tempsRestant;
-
-                if (tempsRestant <= 0) {
-                    finDuJeu();
-                }
+                if (tempsRestant <= 0) { finDuJeu(); }
             }, 1000);
         }
 
         function deplacerCible() {
             const zone = document.getElementById("area");
             const cible = document.getElementById("target-btn");
-            
-            // Calculer des positions aléatoires dans la zone
             const maxX = zone.clientWidth - cible.clientWidth;
             const maxY = zone.clientHeight - cible.clientHeight;
-            
             const randomX = Math.floor(Math.random() * maxX);
             const randomY = Math.floor(Math.random() * maxY);
-            
             cible.style.left = randomX + "px";
             cible.style.top = randomY + "px";
         }
@@ -321,10 +367,8 @@
             document.getElementById("target-btn").style.display = "none";
             document.getElementById("start-game-btn").style.display = "inline-block";
             document.getElementById("start-game-btn").innerText = "Rejouer ! 🔄";
-            
             alert("⏱️ Temps écoulé ! Ton score est de : " + score + " clics !");
             
-            // Vérifier et sauvegarder le record
             let ancienRecord = parseInt(localStorage.getItem("clickerHighScore") || 0);
             if (score > ancienRecord) {
                 localStorage.setItem("clickerHighScore", score);
