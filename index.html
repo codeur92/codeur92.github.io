@@ -11,6 +11,8 @@
             padding-top: 50px;
             min-height: 100vh;
             margin: 0;
+            overflow-x: hidden; /* Empêche le train de créer une barre de défilement horizontale */
+            position: relative;
             transition: background 0.5s ease, color 0.5s ease;
         }
         
@@ -157,8 +159,9 @@
         .btn-mode { background-color: #555555; }
         body.mode-clair .btn-mode { background-color: #000000; }
 
+        /* --- LIENS REPLACÉS AU-DESSUS --- */
         .liens-section {
-            margin-top: 40px;
+            margin-top: 30px;
             padding: 20px;
         }
         .liens-section h2 {
@@ -183,6 +186,7 @@
             padding: 20px;
             box-shadow: 0 10px 30px rgba(255, 0, 127, 0.3);
             color: white;
+            margin-bottom: 100px; /* Laisse de la place pour le train tout en bas */
         }
         .game-area {
             position: relative;
@@ -221,6 +225,33 @@
             color: #7b2cbf;
             font-weight: bold;
         }
+
+        /* --- ANIMATION DU TRAIN EN ARRIÈRE-PLAN --- */
+        .train-zone {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            background-color: rgba(0, 0, 0, 0.15);
+            border-top: 2px solid rgba(255, 255, 255, 0.2);
+            z-index: -1; /* Reste bien en arrière-plan */
+        }
+        body.mode-clair .train-zone {
+            background-color: rgba(0, 0, 0, 0.05);
+            border-top: 2px solid rgba(0, 0, 0, 0.1);
+        }
+        .train {
+            position: absolute;
+            bottom: 5px;
+            font-size: 24px;
+            white-space: nowrap;
+            animation: passageTrain 15s linear infinite;
+        }
+        @keyframes passageTrain {
+            0% { left: -200px; } /* Départ caché à gauche */
+            100% { left: 100%; } /* Arrivée tout à droite */
+        }
     </style>
 </head>
 <body>
@@ -229,13 +260,11 @@
     
     <div id="bienvenue"></div>
 
-    <!-- --- BOÎTE DU LECTEUR DE MUSIQUE --- -->
     <div class="music-player">
         <div class="music-info">
             <span style="font-weight: bold; color: #ff007f;">🎵 Radio-Codeur</span><br>
             <small style="opacity: 0.8;">Synthwave Chill</small>
         </div>
-        <!-- Balise audio cachée avec une musique libre de droits en boucle -->
         <audio id="mon-audio" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" loop></audio>
         <button class="btn-music" id="btn-play-pause" onclick="gererMusique()">Play ▶️</button>
     </div>
@@ -260,6 +289,7 @@
         <button class="btn-mode" onclick="basculerMode()">Changer de Mode 🌓</button>
     </div>
 
+    <!-- --- SECTIONS REPLACÉES DANS LE BON ORDRE --- -->
     <div class="liens-section">
         <h2>Mes Liens Favoris 🌐</h2>
         <a href="https://www.youtube.com" target="_blank" class="lien-bouton btn-youtube">Regarder YouTube 📺</a>
@@ -278,6 +308,11 @@
         <div class="game-area" id="area">
             <button id="target-btn" onclick="clicCible()">CLIQUE ICI !</button>
         </div>
+    </div>
+
+    <!-- --- LE TRAIN QUI PASSE --- -->
+    <div class="train-zone">
+        <div class="train">🚂🚃🚃🚃🚃💨</div>
     </div>
 
     <script>
@@ -303,15 +338,13 @@
             }
         };
 
-        // --- FONCTION POUR LA MUSIQUE ---
         function gererMusique() {
             const audio = document.getElementById("mon-audio");
             const bouton = document.getElementById("btn-play-pause");
-
             if (audio.paused) {
                 audio.play();
                 bouton.innerText = "Pause ⏸️";
-                bouton.style.backgroundColor = "#555555"; // change de couleur quand ça joue
+                bouton.style.backgroundColor = "#555555";
             } else {
                 audio.pause();
                 bouton.innerText = "Play ▶️";
