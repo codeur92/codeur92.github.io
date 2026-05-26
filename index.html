@@ -210,8 +210,6 @@
             margin-bottom: 8px;
             font-size: 0.95rem;
             line-height: 1.4;
-            display: flex;
-            align-items: center;
         }
         .chat-input-area {
             display: flex;
@@ -395,7 +393,6 @@
         // --- CONFIGURATION DE TA BASE DE DONNÉES SUPABASE ---
         const SUPABASE_URL = "https://wesdkbfbyelssqtbbjai.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indlc2RrYmZieWVsc3NxdGJiamFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDQwNDEsImV4cCI6MjA5NTM4MDA0MX0.kKZ3JrLcThrPaFzWCkXOSrOI6FMZ_TrGL9wqwxVizUs";
-        const MOT_DE_PASSE_ADMIN = "TaureauChaud92";
         
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
@@ -427,37 +424,28 @@
                 chargerAnciensMessages(true);
             }
 
-            // --- ÉCOUTE DU DIRECT (AJOUT ET SUPPRESSION) ---
+            // --- ÉCOUTE DU DIRECT (SANS BLOCAGE) ---
             _supabase
                 .channel('schema-db-changes')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+                    // Filtrage intelligent pour les nouveaux arrivants
                     if (heureConnexion && payload.new.created_at && payload.new.created_at <= heureConnexion) {
                         return; 
                     }
                     if (payload.new.nom !== monNom) {
-                        afficherUnMessage(payload.new.id, payload.new.nom, payload.new.texte);
+                        afficherUnMessage(payload.new.nom, payload.new.texte);
                     }
-                })
-                .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, payload => {
-                    let element = document.getElementById(`msg-${payload.old.id}`);
-                    if (element) element.remove();
                 })
                 .subscribe();
         };
 
         // --- FONCTIONS DU TCHAT ---
-        function afficherUnMessage(idMessage, nom, texte) {
+        function afficherUnMessage(nom, texte) {
             let boite = document.getElementById("box-messages");
             let couleurNom = (nom === monNom) ? "#ffff00" : "#48dbfb";
             let affichageNom = (nom === monNom) ? `${nom} (Toi)` : nom;
 
-            boite.innerHTML += `
-                <div class="chat-msg" id="msg-${idMessage}">
-                    <button onclick="supprimerMessage(${idMessage})" style="background:none; border:none; color:#ff4757; cursor:pointer; padding:0 8px 0 0; font-weight:bold; font-size:12px;">[❌]</button>
-                    <span style="color: ${couleurNom}; font-weight: bold;">${affichageNom} : </span>
-                    <span style="margin-left: 5px;">${texte}</span>
-                </div>
-            `;
+            boite.innerHTML += `<div class="chat-msg"><strong style="color: ${couleurNom};">${affichageNom} :</strong> ${texte}</div>`;
             boite.scrollTop = boite.scrollHeight;
         }
 
@@ -466,23 +454,32 @@
             
             if (estPremiereFois) {
                 heureConnexion = new Date().toISOString();
-                boite.innerHTML = `<div class="chat-msg"><strong style="color: #2ed573;">[Serveur] :</strong> Bienvenue pour ta première connexion ! Les messages s'affichent à partir de maintenant. 🚀</div>`;
+                boite.innerHTML = `<div class="chat-msg"><strong style="color: #2ed573;">[Serveur] :</strong> Bienvenue ! Les messages s'affichent à partir de maintenant. 🚀</div>`;
             } else {
-                const { data, error } = await _supabase
-                    .from('messages')
-                    .select('id, nom, texte')
-                    .order('id', { ascending: true })
-                    .limit(50);
+                // On débloque l'affichage directement avant même d'attendre la réponse
+                boite.innerHTML = `<div class="chat-msg"><strong style="color: #2ed573;">[Serveur] :</strong> Bon retour ! Connexion en direct activée. 🔄</div>`;
+                
+                try {
+                    const { data, error } = await _supabase
+                        .from('messages')
+                        .select('nom, texte')
+                        .order('id', { ascending: true })
+                        .limit(50);
 
-                if (error) {
-                    boite.innerHTML = `<div class="chat-msg" style="color:red;">❌ Erreur serveur : Vérifie le RLS sur Supabase.</div>`;
-                    return;
+                    if (error) {
+                        console.error("Erreur de chargement de l'historique :", error);
+                        return;
+                    }
+
+                    if (data && data.length > 0) {
+                        data.forEach(msg => {
+                            let couleurNom = (msg.nom === monNom) ? "#ffff00" : "#48dbfb";
+                            boite.innerHTML += `<div class="chat-msg"><strong style="color: ${couleurNom};">${msg.nom} :</strong> ${msg.texte}</div>`;
+                        });
+                    }
+                } catch (err) {
+                    console.error("Erreur réseau :", err);
                 }
-
-                boite.innerHTML = `<div class="chat-msg"><strong style="color: #2ed573;">[Serveur] :</strong> Bon retour parmi nous ! Connexion en direct activée. 🔄</div>`;
-                data.forEach(msg => {
-                    afficherUnMessage(msg.id, msg.nom, msg.texte);
-                });
             }
             boite.scrollTop = boite.scrollHeight;
         }
@@ -492,48 +489,17 @@
             let texte = input.value.trim();
             if (texte === "") return;
 
+            // Affichage instantané sur ton écran (Zéro latence)
+            afficherUnMessage(monNom, texte);
             input.value = "";
 
-            const { data, error } = await _supabase
+            // Envoi en arrière-plan vers Supabase
+            const { error } = await _supabase
                 .from('messages')
-                .insert([{ nom: monNom, texte: texte }])
-                .select();
+                .insert([{ nom: monNom, texte: texte }]);
 
             if (error) {
                 console.error("Erreur d'envoi vers Supabase :", error);
-            } else if (data && data.length > 0) {
-                afficherUnMessage(data[0].id, monNom, texte);
-            }
-        }
-
-        // --- FONCTION DE SUPPRESSION ---
-        async function supprimerMessage(idMessage) {
-            let estAdmin = sessionStorage.getItem("adminConnecte");
-
-            if (!estAdmin) {
-                let tentative = prompt("🔒 Zone modérateur. Entre le mot de passe pour supprimer :");
-                
-                if (tentative === MOT_DE_PASSE_ADMIN) {
-                    sessionStorage.setItem("adminConnecte", "true");
-                    estAdmin = true;
-                } else {
-                    alert("❌ Mot de passe incorrect !");
-                    return;
-                }
-            }
-
-            if (estAdmin) {
-                const { error } = await _supabase
-                    .from('messages')
-                    .delete()
-                    .eq('id', idMessage);
-
-                if (error) {
-                    alert("Erreur serveur lors de la suppression.");
-                } else {
-                    let element = document.getElementById(`msg-${idMessage}`);
-                    if (element) element.remove();
-                }
             }
         }
 
@@ -604,3 +570,52 @@
             jeuEnCours = false;
             document.getElementById("target-btn").style.display = "none";
             document.getElementById("start-game-btn").style.display = "inline-block";
+            document.getElementById("start-game-btn").innerText = "Rejouer ! 🔄";
+            alert("⏱️ Temps écoulé ! Ton score est de : " + score + " clics !");
+            
+            let ancienRecord = parseInt(localStorage.getItem("clickerHighScore") || 0);
+            if (score > ancienRecord) {
+                localStorage.setItem("clickerHighScore", score);
+                document.getElementById("high-score").innerText = score;
+                alert("👑 NOUVEAU RECORD ! Tu as géré !");
+            }
+        }
+
+        // --- SCRIPT DU COMPTE À REBOURS ---
+        setInterval(function() {
+            const maintenant = new Date();
+            let anneeCible = maintenant.getFullYear();
+            let dateAnniv = new Date("June 19, " + anneeCible + " 00:00:00");
+
+            if (maintenant.getTime() > dateAnniv.getTime()) {
+                anneeCible = anneeCible + 1;
+                dateAnniv = new Date("June 19, " + anneeCible + " 00:00:00");
+            }
+
+            const distance = dateAnniv.getTime() - maintenant.getTime();
+            const jours = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const heures = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const secondes = Math.floor((distance % (1000 * 60)) / 1000);
+
+            const age = 13 + (anneeCible - 2026);
+            document.getElementById("countdown-title").innerHTML = "Mon anniversaire (" + age + " ans) ! 🎂🎉";
+            document.getElementById("countdown").innerHTML = jours + "j " + heures + "h " + minutes + "m " + secondes + "s";
+        }, 1000);
+
+        function infosMetro() {
+            alert("🚇 [RATP] Info Trafic - Ligne Codeur92 :\n\n• Le trafic est totalement régulier.\n• Prochain arrêt de rame : Station 13 Ans (le 19 Juin) !\n• Voyageurs à bord : Vous ! 🎒");
+        }
+
+        function changerCouleur() {
+            document.querySelector("h1").style.color = "#FFD700";
+            alert("Le titre est devenu doré ! 🌟");
+        }
+
+        function basculerMode() {
+            document.body.classList.toggle("mode-clair");
+            localStorage.setItem("theme", document.body.classList.contains("mode-clair") ? "clair" : "sombre");
+        }
+    </script>
+</body>
+</html>
