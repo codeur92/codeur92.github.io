@@ -210,6 +210,8 @@
             margin-bottom: 8px;
             font-size: 0.95rem;
             line-height: 1.4;
+            display: flex;
+            align-items: center;
         }
         .chat-input-area {
             display: flex;
@@ -337,7 +339,7 @@
     <div class="about-section">
         <h2>À propos de moi 😎</h2>
         <span class="badge">Développeur en herbe</span>
-        <p>Bienvenue sur mon espace ! Je m'appelle <strong>Codeur92</strong>.</p>
+        <p>Bienvenue sur mon space ! Je m'appelle <strong>Codeur92</strong>.</p>
         <p>Sur ce site, je teste des scripts, je crée des designs et je partage mes liens préférés. En ce moment, je kiffe coder des sites web et créer des projets sur Roblox ! 🎮⚡</p>
         
         <div class="countdown-container">
@@ -363,7 +365,7 @@
     <div class="chat-section">
         <h2 style="margin-top:0; color:#00f5d4; font-size: 1.5rem;">💬 Le Vrai Tchat En Direct 🌍</h2>
         <div class="chat-box" id="box-messages">
-            <div class="chat-msg"><strong style="color: #ff9f43;">[Système] :</strong> Connexion au serveur Supabase en cours...</div>
+            <div class="chat-msg"><strong style="color: #ff9f43;">[Système] :</strong> Connexion au serveur Supabase...</div>
         </div>
         <div class="chat-input-area">
             <input type="text" id="input-message" class="chat-input" placeholder="Écris ton message ici..." onkeypress="verifierEntree(event)">
@@ -393,11 +395,12 @@
         // --- CONFIGURATION DE TA BASE DE DONNÉES SUPABASE ---
         const SUPABASE_URL = "https://wesdkbfbyelssqtbbjai.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indlc2RrYmZieWVsc3NxdGJiamFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDQwNDEsImV4cCI6MjA5NTM4MDA0MX0.kKZ3JrLcThrPaFzWCkXOSrOI6FMZ_TrGL9wqwxVizUs";
+        const MOT_DE_PASSE_ADMIN = "TaureauChaud92";
         
-        // Initialisation de la connexion serveur
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let monNom = "Visiteur";
+        let heureConnexion = null;
 
         window.onload = function() {
             let themeSauvegarde = localStorage.getItem("theme");
@@ -412,7 +415,7 @@
             if (prenomSauvegarde) {
                 monNom = prenomSauvegarde;
                 document.getElementById("bienvenue").innerText = "Bienvenue sur mon site, " + prenomSauvegarde + " ! 👋";
-                chargerAnciensMessages();
+                chargerAnciensMessages(false);
             } else {
                 let prenom = "";
                 while (prenom === "" || prenom === null) {
@@ -421,43 +424,66 @@
                 localStorage.setItem("prenomVisiteur", prenom);
                 monNom = prenom;
                 document.getElementById("bienvenue").innerText = "Bienvenue sur mon site, " + prenom + " ! 👋";
-                chargerAnciensMessages();
+                chargerAnciensMessages(true);
             }
 
-            // --- ÉCOUTE DU DIRECT SANS DOUBLONS ---
+            // --- ÉCOUTE DU DIRECT (AJOUT ET SUPPRESSION) ---
             _supabase
                 .channel('schema-db-changes')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-                    // Si le message vient d'un autre utilisateur, on l'affiche en direct
-                    if (payload.new.nom !== monNom) {
-                        afficherUnMessage(payload.new.nom, payload.new.texte);
+                    if (heureConnexion && payload.new.created_at && payload.new.created_at <= heureConnexion) {
+                        return; 
                     }
+                    if (payload.new.nom !== monNom) {
+                        afficherUnMessage(payload.new.id, payload.new.nom, payload.new.texte);
+                    }
+                })
+                .on('postgres_changes', { event: 'DELETE', schema: 'public', table: 'messages' }, payload => {
+                    let element = document.getElementById(`msg-${payload.old.id}`);
+                    if (element) element.remove();
                 })
                 .subscribe();
         };
 
-        // --- FONCTIONS DU VRAI TCHAT ---
-        async function chargerAnciensMessages() {
+        // --- FONCTIONS DU TCHAT ---
+        function afficherUnMessage(idMessage, nom, texte) {
+            let boite = document.getElementById("box-messages");
+            let couleurNom = (nom === monNom) ? "#ffff00" : "#48dbfb";
+            let affichageNom = (nom === monNom) ? `${nom} (Toi)` : nom;
+
+            boite.innerHTML += `
+                <div class="chat-msg" id="msg-${idMessage}">
+                    <button onclick="supprimerMessage(${idMessage})" style="background:none; border:none; color:#ff4757; cursor:pointer; padding:0 8px 0 0; font-weight:bold; font-size:12px;">[❌]</button>
+                    <span style="color: ${couleurNom}; font-weight: bold;">${affichageNom} : </span>
+                    <span style="margin-left: 5px;">${texte}</span>
+                </div>
+            `;
+            boite.scrollTop = boite.scrollHeight;
+        }
+
+        async function chargerAnciensMessages(estPremiereFois) {
             let boite = document.getElementById("box-messages");
             
-            const { data, error } = await _supabase
-                .from('messages')
-                .select('nom, texte')
-                .order('id', { ascending: true })
-                .limit(50);
+            if (estPremiereFois) {
+                heureConnexion = new Date().toISOString();
+                boite.innerHTML = `<div class="chat-msg"><strong style="color: #2ed573;">[Serveur] :</strong> Bienvenue pour ta première connexion ! Les messages s'affichent à partir de maintenant. 🚀</div>`;
+            } else {
+                const { data, error } = await _supabase
+                    .from('messages')
+                    .select('id, nom, texte')
+                    .order('id', { ascending: true })
+                    .limit(50);
 
-            if (error) {
-                boite.innerHTML = `<div class="chat-msg" style="color:red;">❌ Erreur serveur : Vérifie que Row Level Security (RLS) est bien désactivé sur Supabase.</div>`;
-                console.error(error);
-                return;
+                if (error) {
+                    boite.innerHTML = `<div class="chat-msg" style="color:red;">❌ Erreur serveur : Vérifie le RLS sur Supabase.</div>`;
+                    return;
+                }
+
+                boite.innerHTML = `<div class="chat-msg"><strong style="color: #2ed573;">[Serveur] :</strong> Bon retour parmi nous ! Connexion en direct activée. 🔄</div>`;
+                data.forEach(msg => {
+                    afficherUnMessage(msg.id, msg.nom, msg.texte);
+                });
             }
-
-            boite.innerHTML = `<div class="chat-msg"><strong style="color: #2ed573;">[Serveur] :</strong> Connecté en temps réel ! 🚀</div>`;
-            data.forEach(msg => {
-                // On affiche l'historique sans le tag "(Toi)" pour que ce soit plus propre au chargement
-                let couleurNom = (msg.nom === monNom) ? "#ffff00" : "#48dbfb";
-                boite.innerHTML += `<div class="chat-msg"><strong style="color: ${couleurNom};">${msg.nom} :</strong> ${msg.texte}</div>`;
-            });
             boite.scrollTop = boite.scrollHeight;
         }
 
@@ -466,27 +492,49 @@
             let texte = input.value.trim();
             if (texte === "") return;
 
-            // On l'affiche instantanément pour toi (sans attendre le serveur)
-            afficherUnMessage(monNom, texte);
             input.value = "";
 
-            // Envoi en tâche de fond vers Supabase
-            const { error } = await _supabase
+            const { data, error } = await _supabase
                 .from('messages')
-                .insert([{ nom: monNom, texte: texte }]);
+                .insert([{ nom: monNom, texte: texte }])
+                .select();
 
             if (error) {
                 console.error("Erreur d'envoi vers Supabase :", error);
+            } else if (data && data.length > 0) {
+                afficherUnMessage(data[0].id, monNom, texte);
             }
         }
 
-        function afficherUnMessage(nom, texte) {
-            let boite = document.getElementById("box-messages");
-            let couleurNom = (nom === monNom) ? "#ffff00" : "#48dbfb";
-            let affichageNom = (nom === monNom) ? `${nom} (Toi)` : nom;
+        // --- FONCTION DE SUPPRESSION ---
+        async function supprimerMessage(idMessage) {
+            let estAdmin = sessionStorage.getItem("adminConnecte");
 
-            boite.innerHTML += `<div class="chat-msg"><strong style="color: ${couleurNom};">${affichageNom} :</strong> ${texte}</div>`;
-            boite.scrollTop = boite.scrollHeight;
+            if (!estAdmin) {
+                let tentative = prompt("🔒 Zone modérateur. Entre le mot de passe pour supprimer :");
+                
+                if (tentative === MOT_DE_PASSE_ADMIN) {
+                    sessionStorage.setItem("adminConnecte", "true");
+                    estAdmin = true;
+                } else {
+                    alert("❌ Mot de passe incorrect !");
+                    return;
+                }
+            }
+
+            if (estAdmin) {
+                const { error } = await _supabase
+                    .from('messages')
+                    .delete()
+                    .eq('id', idMessage);
+
+                if (error) {
+                    alert("Erreur serveur lors de la suppression.");
+                } else {
+                    let element = document.getElementById(`msg-${idMessage}`);
+                    if (element) element.remove();
+                }
+            }
         }
 
         function verifierEntree(event) {
@@ -556,50 +604,3 @@
             jeuEnCours = false;
             document.getElementById("target-btn").style.display = "none";
             document.getElementById("start-game-btn").style.display = "inline-block";
-            document.getElementById("start-game-btn").innerText = "Rejouer ! 🔄";
-            alert("⏱️ Temps écoulé ! Ton score est de : " + score + " clics !");
-            
-            let ancienRecord = parseInt(localStorage.getItem("clickerHighScore") || 0);
-            if (score > ancienRecord) {
-                localStorage.setItem("clickerHighScore", score);
-                document.getElementById("high-score").innerText = score;
-                alert("👑 NOUVEAU RECORD ! Tu as géré !");
-            }
-        }
-
-        // --- SCRIPT DU COMPTE À REBOURS ---
-        setInterval(function() {
-            const maintenant = new Date();
-            let anneeCible = maintenant.getFullYear();
-            let dateAnniv = new Date("June 19, " + anneeCible + " 00:00:00");
-
-            if (maintenant.getTime() > dateAnniv.getTime()) {
-                anneeCible = anneeCible + 1;
-                dateAnniv = new Date("June 19, " + anneeCible + " 00:00:00");
-            }
-
-            const distance = dateAnniv.getTime() - maintenant.getTime();
-            const jours = Math.floor(distance / (1000 * 60 * 60 * 24));
-            const heures = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
-            const secondes = Math.floor((distance % (1000 * 60)) / 1000);
-
-            const age = 13 + (anneeCible - 2026);
-            document.getElementById("countdown-title").innerHTML = "Mon anniversaire (" + age + " ans) ! 🎂🎉";
-            document.getElementById("countdown").innerHTML = jours + "j " + heures + "h " + minutes + "m " + secondes + "s";
-        }, 1000);
-
-        function infosMetro() {
-            alert("🚇 [RATP] Info Trafic - Ligne Codeur92 :\n\n• Le trafic est totalement régulier.\n• Prochain arrêt de rame : Station 13 Ans (le 19 Juin) !\n• Voyageurs à bord : Vous ! 🎒");
-        }
-
-        function changerCouleur() {
-            document.querySelector("h1").style.color = "#FFD700";
-            alert("Le titre est devenu doré ! 🌟");
-        }
-
-        function basculerMode() {
-            document.body.classList.toggle("mode-clair");
-            localStorage.setItem("theme", document.body.classList.contains("mode-clair") ? "clair" : "sombre");
-        }
-    </script>
