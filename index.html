@@ -424,11 +424,14 @@
                 chargerAnciensMessages();
             }
 
-            // --- ACTIVER LE TEMPS RÉEL (ÉCOUTE DES NOUVEAUX MESSAGES) ---
+            // --- ÉCOUTE DU DIRECT SANS DOUBLONS ---
             _supabase
-                .channel('messages-live')
-                .on('postgres_changes', { event: 'INSERT', scheme: 'public', table: 'messages' }, payload => {
-                    afficherUnMessage(payload.new.nom, payload.new.texte);
+                .channel('schema-db-changes')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+                    // Si le message vient d'un autre utilisateur, on l'affiche en direct
+                    if (payload.new.nom !== monNom) {
+                        afficherUnMessage(payload.new.nom, payload.new.texte);
+                    }
                 })
                 .subscribe();
         };
@@ -436,7 +439,7 @@
         // --- FONCTIONS DU VRAI TCHAT ---
         async function chargerAnciensMessages() {
             let boite = document.getElementById("box-messages");
-            // On récupère les 50 derniers messages enregistrés sur Supabase
+            
             const { data, error } = await _supabase
                 .from('messages')
                 .select('nom, texte')
@@ -451,8 +454,11 @@
 
             boite.innerHTML = `<div class="chat-msg"><strong style="color: #2ed573;">[Serveur] :</strong> Connecté en temps réel ! 🚀</div>`;
             data.forEach(msg => {
-                afficherUnMessage(msg.nom, msg.texte);
+                // On affiche l'historique sans le tag "(Toi)" pour que ce soit plus propre au chargement
+                let couleurNom = (msg.nom === monNom) ? "#ffff00" : "#48dbfb";
+                boite.innerHTML += `<div class="chat-msg"><strong style="color: ${couleurNom};">${msg.nom} :</strong> ${msg.texte}</div>`;
             });
+            boite.scrollTop = boite.scrollHeight;
         }
 
         async function envoyerMessage() {
@@ -460,16 +466,17 @@
             let texte = input.value.trim();
             if (texte === "") return;
 
-            // Envoi des données vers ta table Supabase
+            // On l'affiche instantanément pour toi (sans attendre le serveur)
+            afficherUnMessage(monNom, texte);
+            input.value = "";
+
+            // Envoi en tâche de fond vers Supabase
             const { error } = await _supabase
                 .from('messages')
                 .insert([{ nom: monNom, texte: texte }]);
 
             if (error) {
-                alert("Erreur d'envoi ! Vérifie ta table Supabase.");
-                console.error(error);
-            } else {
-                input.value = "";
+                console.error("Erreur d'envoi vers Supabase :", error);
             }
         }
 
@@ -479,7 +486,7 @@
             let affichageNom = (nom === monNom) ? `${nom} (Toi)` : nom;
 
             boite.innerHTML += `<div class="chat-msg"><strong style="color: ${couleurNom};">${affichageNom} :</strong> ${texte}</div>`;
-            boite.scrollTop = boite.scrollHeight; // Défilement auto vers le bas
+            boite.scrollTop = boite.scrollHeight;
         }
 
         function verifierEntree(event) {
@@ -596,5 +603,3 @@
             localStorage.setItem("theme", document.body.classList.contains("mode-clair") ? "clair" : "sombre");
         }
     </script>
-</body>
-</html>
