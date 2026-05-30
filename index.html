@@ -10,7 +10,7 @@
             color: #ffffff;
             font-family: 'Segoe UI', Arial, sans-serif;
             text-align: center;
-            padding-top: 100px; /* Espace augmenté pour ne pas que le logo touche les éléments */
+            padding-top: 50px;
             min-height: 100vh;
             margin: 0;
             overflow-x: hidden;
@@ -23,32 +23,9 @@
             color: #1e1e2f;
         }
 
-        /* --- STYLE DU LOGO IMAGE EN HAUT À GAUCHE --- */
-        .header-bar {
-            position: absolute;
-            top: 15px;
-            left: 20px;
-            z-index: 10;
-        }
-
-        .site-logo-img {
-            height: 60px; /* Taille parfaite pour le coin supérieur gauche */
-            width: auto;
-            border-radius: 12px; /* Adoucit les angles de l'image carrée */
-            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
-            cursor: pointer;
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-
-        .site-logo-img:hover {
-            transform: scale(1.08) rotate(-2deg); /* Petit effet dynamique au survol */
-            box-shadow: 0 6px 20px rgba(0, 245, 212, 0.4);
-        }
-
         h1 {
             font-size: 3rem;
             text-shadow: 0px 4px 10px rgba(0,0,0,0.3);
-            margin-top: 20px;
             margin-bottom: 10px;
         }
 
@@ -329,16 +306,8 @@
             margin: 0;
         }
 
-        /* Responsive Mobile */
+        /* Responsive Mobile : l'un sous l'autre sur petit écran */
         @media (max-width: 800px) {
-            .header-bar {
-                position: static;
-                margin-bottom: 15px;
-                display: block;
-            }
-            body {
-                padding-top: 20px;
-            }
             .arcade-container {
                 flex-direction: column;
                 align-items: center;
@@ -378,10 +347,6 @@
     </style>
 </head>
 <body>
-
-    <div class="header-bar">
-        <img src="logo.png" alt="Logo Codeur92" class="site-logo-img" onclick="location.reload()">
-    </div>
 
     <h1>Mon premier site 🚀</h1>
     
@@ -507,6 +472,7 @@
                 chargerAnciensMessages(true);
             }
 
+            // --- ÉCOUTE DU DIRECT (SANS BLOCAGE) ---
             _supabase
                 .channel('schema-db-changes')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
@@ -720,6 +686,7 @@
             document.getElementById("jp-start-btn").innerText = "Rejouer ! 🔥";
         }
 
+        // Écouteur pour la touche Entrée sur le jeu du Juste Prix
         document.addEventListener("DOMContentLoaded", function() {
             document.getElementById("jp-input").addEventListener("keypress", function(event) {
                 if (event.key === "Enter") {
