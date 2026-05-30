@@ -1,0 +1,768 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Mon Site Évolué !</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    
+    <style>
+        body {
+            background: linear-gradient(135deg, #1e1e2f, #2a2a40);
+            color: #ffffff;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            text-align: center;
+            padding-top: 100px; /* Espace augmenté pour ne pas que le logo touche les éléments */
+            min-height: 100vh;
+            margin: 0;
+            overflow-x: hidden;
+            position: relative;
+            transition: background 0.5s ease, color 0.5s ease;
+        }
+        
+        body.mode-clair {
+            background: linear-gradient(135deg, #e0e0e0, #ffffff);
+            color: #1e1e2f;
+        }
+
+        /* --- STYLE DU LOGO IMAGE EN HAUT À GAUCHE --- */
+        .header-bar {
+            position: absolute;
+            top: 15px;
+            left: 20px;
+            z-index: 10;
+        }
+
+        .site-logo-img {
+            height: 60px; /* Taille parfaite pour le coin supérieur gauche */
+            width: auto;
+            border-radius: 12px; /* Adoucit les angles de l'image carrée */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
+            cursor: pointer;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .site-logo-img:hover {
+            transform: scale(1.08) rotate(-2deg); /* Petit effet dynamique au survol */
+            box-shadow: 0 6px 20px rgba(0, 245, 212, 0.4);
+        }
+
+        h1 {
+            font-size: 3rem;
+            text-shadow: 0px 4px 10px rgba(0,0,0,0.3);
+            margin-top: 20px;
+            margin-bottom: 10px;
+        }
+
+        #bienvenue {
+            font-size: 1.5rem;
+            color: #007AFF;
+            font-weight: bold;
+            margin-bottom: 20px;
+            min-height: 35px;
+        }
+        body.mode-clair #bienvenue {
+            color: #0056b3;
+        }
+
+        /* --- STYLE DU LECTEUR DE MUSIQUE --- */
+        .music-player {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            border-radius: 15px;
+            max-width: 300px;
+            margin: 0 auto 20px auto;
+            padding: 10px 15px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        body.mode-clair .music-player {
+            background: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        .music-info {
+            font-size: 0.9rem;
+            text-align: left;
+        }
+        .btn-music {
+            background-color: #ff007f;
+            padding: 8px 15px !important;
+            font-size: 14px !important;
+            margin: 0 !important;
+            box-shadow: 0 4px 10px rgba(255, 0, 127, 0.3);
+        }
+        .btn-music:hover {
+            background-color: #d00068;
+            transform: scale(1.05);
+        }
+
+        .about-section {
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 20px;
+            max-width: 500px;
+            margin: 30px auto;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: background-color 0.5s ease, border 0.5s ease;
+        }
+        body.mode-clair .about-section {
+            background-color: rgba(0, 0, 0, 0.05);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        .about-section h2 {
+            margin-top: 0;
+            color: #FFD700;
+        }
+        body.mode-clair .about-section h2 {
+            color: #d4af37;
+        }
+        .badge {
+            background-color: #8A2BE2;
+            color: white;
+            padding: 5px 10px;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            font-weight: bold;
+            display: inline-block;
+            margin-bottom: 15px;
+        }
+
+        .countdown-container {
+            margin-top: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            padding: 15px;
+            border-radius: 15px;
+            border: 2px solid #2ed573;
+        }
+        body.mode-clair .countdown-container {
+            background: rgba(255, 255, 255, 0.7);
+        }
+        .countdown-title {
+            font-size: 1.1rem;
+            font-weight: bold;
+            margin-bottom: 10px;
+            color: #ff4757;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        #countdown {
+            font-size: 1.6rem;
+            font-family: 'Courier New', Courier, monospace;
+            font-weight: bold;
+            letter-spacing: 2px;
+            color: #2ed573;
+            background-color: #000000;
+            padding: 10px;
+            border-radius: 8px;
+            display: inline-block;
+            box-shadow: inset 0 0 10px rgba(46, 213, 115, 0.5);
+        }
+
+        .container {
+            margin-top: 20px;
+        }
+        button, .lien-bouton {
+            display: inline-block;
+            text-decoration: none;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            font-size: 18px;
+            border-radius: 30px;
+            cursor: pointer;
+            margin: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            transition: 0.2s;
+        }
+        
+        .btn-bleu { background-color: #007AFF; }
+        .btn-bleu:hover { background-color: #0056b3; transform: scale(1.05); }
+        
+        .btn-violet { background-color: #8A2BE2; }
+        .btn-violet:hover { background-color: #6A1B9A; transform: scale(1.05); }
+
+        .btn-mode { background-color: #555555; }
+        body.mode-clair .btn-mode { background-color: #000000; }
+
+        .liens-section {
+            margin-top: 30px;
+            padding: 20px;
+        }
+        .liens-section h2 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+        }
+        
+        .btn-youtube { background-color: #ea4335; }
+        .btn-youtube:hover { background-color: #c5221f; transform: scale(1.05); }
+
+        .btn-roblox { background-color: #000000; border: 1px solid #ffffff; }
+        .btn-roblox:hover { background-color: #333333; transform: scale(1.05); }
+        body.mode-clair .btn-roblox { border: 1px solid #000000; color: #000000; background-color: #ffffff; }
+        body.mode-clair .btn-roblox:hover { background-color: #e0e0e0; }
+
+        /* --- STYLE DE LA ZONE DE CHAT --- */
+        .chat-section {
+            background-color: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            max-width: 500px;
+            margin: 30px auto;
+            padding: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+        body.mode-clair .chat-section {
+            background-color: rgba(0, 0, 0, 0.03);
+            border: 1px solid rgba(0, 0, 0, 0.1);
+        }
+        .chat-box {
+            background-color: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            height: 180px;
+            overflow-y: auto;
+            padding: 10px;
+            text-align: left;
+            margin-bottom: 15px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        body.mode-clair .chat-box {
+            background-color: #ffffff;
+            border: 1px solid #ccc;
+        }
+        .chat-msg {
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+        }
+        .chat-input-area {
+            display: flex;
+            gap: 10px;
+        }
+        .chat-input {
+            flex: 1;
+            padding: 10px 15px;
+            border-radius: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 16px;
+            outline: none;
+        }
+        body.mode-clair .chat-input {
+            background-color: #ffffff;
+            color: #000;
+            border: 1px solid #ccc;
+        }
+        .btn-send {
+            background-color: #00f5d4;
+            color: #000;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            margin: 0;
+            border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(0, 245, 212, 0.2);
+        }
+        .btn-send:hover { background-color: #00c4a9; transform: scale(1.05); }
+
+        /* --- STYLE DES MINI-JEUX --- */
+        .game-section {
+            background: linear-gradient(135deg, #ff007f, #7b2cbf);
+            border-radius: 20px;
+            max-width: 500px;
+            margin: 0;
+            padding: 20px;
+            box-shadow: 0 10px 30px rgba(255, 0, 127, 0.3);
+            color: white;
+        }
+        .game-area {
+            position: relative;
+            width: 100%;
+            height: 200px;
+            background-color: rgba(0, 0, 0, 0.4);
+            border-radius: 15px;
+            margin-top: 15px;
+            overflow: hidden;
+            border: 2px dashed rgba(255, 255, 255, 0.3);
+        }
+        #target-btn {
+            position: absolute;
+            padding: 10px 20px;
+            font-size: 16px;
+            background-color: #00f5d4;
+            color: #000000;
+            font-weight: bold;
+            border-radius: 50px;
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 0 15px #00f5d4;
+            display: none;
+            margin: 0;
+        }
+        #target-btn:active { transform: scale(0.9); }
+        .game-stats {
+            display: flex;
+            justify-content: space-around;
+            font-weight: bold;
+            font-size: 1.1rem;
+            margin-bottom: 10px;
+        }
+        .btn-start {
+            background-color: #ffffff;
+            color: #7b2cbf;
+            font-weight: bold;
+        }
+
+        /* --- ALIGNEMENT CÔTE À CÔTE DE L'ARCADE --- */
+        .arcade-container {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            gap: 20px;
+            max-width: 1100px;
+            margin: 40px auto 100px auto;
+            padding: 0 20px;
+        }
+        .arcade-container .game-section {
+            flex: 1;
+            max-width: 500px;
+            margin: 0;
+        }
+
+        /* Responsive Mobile */
+        @media (max-width: 800px) {
+            .header-bar {
+                position: static;
+                margin-bottom: 15px;
+                display: block;
+            }
+            body {
+                padding-top: 20px;
+            }
+            .arcade-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            .arcade-container .game-section {
+                width: 100%;
+                margin-bottom: 20px;
+            }
+        }
+
+        /* --- ANIMATION DU TRAIN EN ARRIÈRE-PLAN --- */
+        .train-zone {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            height: 40px;
+            background-color: rgba(0, 0, 0, 0.15);
+            border-top: 2px solid rgba(255, 255, 255, 0.2);
+            z-index: -1;
+        }
+        body.mode-clair .train-zone {
+            background-color: rgba(0, 0, 0, 0.05);
+            border-top: 2px solid rgba(0, 0, 0, 0.1);
+        }
+        .train {
+            position: absolute;
+            bottom: 5px;
+            font-size: 24px;
+            white-space: nowrap;
+            animation: passageTrain 15s linear infinite;
+        }
+        @keyframes passageTrain {
+            0% { left: -200px; }
+            100% { left: 100%; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="header-bar">
+        <img src="logo.png" alt="Logo Codeur92" class="site-logo-img" onclick="location.reload()">
+    </div>
+
+    <h1>Mon premier site 🚀</h1>
+    
+    <div id="bienvenue"></div>
+
+    <div class="music-player">
+        <div class="music-info">
+            <span style="font-weight: bold; color: #ff007f;">🎵 Radio-Codeur</span><br>
+            <small style="opacity: 0.8;">Synthwave Chill</small>
+        </div>
+        <audio id="mon-audio" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" loop></audio>
+        <button class="btn-music" id="btn-play-pause" onclick="gererMusique()">Play ▶️</button>
+    </div>
+
+    <div class="about-section">
+        <h2>À propos de moi 😎</h2>
+        <span class="badge">Développeur en herbe</span>
+        <p>Bienvenue sur mon space ! Je m'appelle <strong>Codeur92</strong>.</p>
+        <p>Sur ce site, je teste des scripts, je crée des designs et je partage mes liens préférés. En ce moment, je kiffe coder des sites web et créer des projets sur Roblox ! 🎮⚡</p>
+        
+        <div class="countdown-container">
+            <div class="countdown-title" id="countdown-title">Prochain Anniversaire ⏱️</div>
+            <div id="countdown">Calcul en cours...</div>
+        </div>
+    </div>
+
+    <p>Ce site évolue en direct depuis mon Ordi !</p>
+    
+    <div class="container">
+        <button class="btn-bleu" onclick="infosMetro()">Info Réseau 🚇</button>
+        <button class="btn-violet" onclick="changerCouleur()">Changer le titre 🎨</button>
+        <button class="btn-mode" onclick="basculerMode()">Changer de Mode 🌓</button>
+    </div>
+
+    <div class="liens-section">
+        <h2>Mes Liens Favoris 🌐</h2>
+        <a href="https://www.youtube.com" target="_blank" class="lien-bouton btn-youtube">Regarder YouTube 📺</a>
+        <a href="https://www.roblox.com" target="_blank" class="lien-bouton btn-roblox">Jouer à Roblox 🎮</a>
+    </div>
+
+    <div class="chat-section">
+        <h2 style="margin-top:0; color:#00f5d4; font-size: 1.5rem;">💬 Le Vrai Tchat En Direct 🌍</h2>
+        <div class="chat-box" id="box-messages">
+            <div class="chat-msg"><strong style="color: #ff9f43;">[Système] :</strong> Connexion au serveur Supabase...</div>
+        </div>
+        <div class="chat-input-area">
+            <input type="text" id="input-message" class="chat-input" placeholder="Écris ton message ici..." onkeypress="verifierEntree(event)">
+            <button class="btn-send" onclick="envoyerMessage()">Envoyer</button>
+        </div>
+    </div>
+
+    <div class="arcade-container">
+
+        <div class="game-section">
+            <h2>🎮 Réflexe Clicker Challenge</h2>
+            <div class="game-stats">
+                <div>Score : <span id="current-score">0</span></div>
+                <div>Temps : <span id="game-timer">10</span>s</div>
+                <div>Record : <span id="high-score">0</span>🏆</div>
+            </div>
+            <button class="btn-start" id="start-game-btn" onclick="lancerJeu()">Lancer la partie ! 🔥</button>
+            
+            <div class="game-area" id="area">
+                <button id="target-btn" onclick="clicCible()">CLIQUE ICI !</button>
+            </div>
+        </div>
+
+        <div class="game-section" style="background: linear-gradient(135deg, #11998e, #38ef7d); box-shadow: 0 10px 30px rgba(56, 239, 125, 0.3);">
+            <h2>🕹️ Devine le Nombre Magique</h2>
+            <p>Trouve le nombre secret entre 1 et 100 !</p>
+            
+            <div class="game-stats">
+                <div>Tentatives : <span id="jp-tentatives">0</span></div>
+                <div>Statut : <span id="jp-statut" style="color: #ffff00;">En attente...</span></div>
+            </div>
+
+            <div style="margin-top: 15px;">
+                <input type="number" id="jp-input" min="1" max="100" style="padding: 10px; border-radius: 10px; border: none; width: 80px; font-size: 16px; text-align: center; outline: none;" placeholder="?" disabled>
+                <button class="btn-send" id="jp-btn" onclick="verifierProposition()" style="background-color: #ffffff; color: #11998e; box-shadow: none; vertical-align: middle;" disabled>Valider</button>
+            </div>
+
+            <button class="btn-start" id="jp-start-btn" onclick="demarrerJustePrix()" style="margin-top: 15px; background-color: #ffffff; color: #11998e;">Lancer une partie ! 🎲</button>
+        </div>
+
+    </div>
+
+    <div class="train-zone">
+        <div class="train">🚂🚃🚃🚃🚃💨</div>
+    </div>
+
+    <script>
+        // --- CONFIGURATION DE TA BASE DE DONNÉES SUPABASE ---
+        const SUPABASE_URL = "https://wesdkbfbyelssqtbbjai.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indlc2RrYmZieWVsc3NxdGJiamFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDQwNDEsImV4cCI6MjA5NTM4MDA0MX0.kKZ3JrLcThrPaFzWCkXOSrOI6FMZ_TrGL9wqwxVizUs";
+        
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let monNom = "Visiteur";
+        let heureConnexion = null;
+
+        window.onload = function() {
+            let themeSauvegarde = localStorage.getItem("theme");
+            if (themeSauvegarde === "clair") {
+                document.body.classList.add("mode-clair");
+            }
+
+            let recordSauve = localStorage.getItem("clickerHighScore") || 0;
+            document.getElementById("high-score").innerText = recordSauve;
+
+            let prenomSauvegarde = localStorage.getItem("prenomVisiteur");
+            if (prenomSauvegarde) {
+                monNom = prenomSauvegarde;
+                document.getElementById("bienvenue").innerText = "Bienvenue sur mon site, " + prenomSauvegarde + " ! 👋";
+                chargerAnciensMessages(false);
+            } else {
+                let prenom = "";
+                while (prenom === "" || prenom === null) {
+                    prenom = prompt("Hé non ! Tu devez obligatoirement me donner ton prénom pour entrer : Envoie le blaze ! 🕶️");
+                }
+                localStorage.setItem("prenomVisiteur", prenom);
+                monNom = prenom;
+                document.getElementById("bienvenue").innerText = "Bienvenue sur mon site, " + prenom + " ! 👋";
+                chargerAnciensMessages(true);
+            }
+
+            _supabase
+                .channel('schema-db-changes')
+                .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
+                    if (heureConnexion && payload.new.created_at && payload.new.created_at <= heureConnexion) {
+                        return; 
+                    }
+                    if (payload.new.nom !== monNom) {
+                        afficherUnMessage(payload.new.nom, payload.new.texte);
+                    }
+                })
+                .subscribe();
+        };
+
+        // --- FONCTIONS DU TCHAT ---
+        function afficherUnMessage(nom, texte) {
+            let boite = document.getElementById("box-messages");
+            let couleurNom = (nom === monNom) ? "#ffff00" : "#48dbfb";
+            let affichageNom = (nom === monNom) ? `${nom} (Toi)` : nom;
+
+            boite.innerHTML += `<div class="chat-msg"><strong style="color: ${couleurNom};">${affichageNom} :</strong> ${texte}</div>`;
+            boite.scrollTop = boite.scrollHeight;
+        }
+
+        async function chargerAnciensMessages(estPremiereFois) {
+            let boite = document.getElementById("box-messages");
+            
+            if (estPremiereFois) {
+                heureConnexion = new Date().toISOString();
+                boite.innerHTML = `<div class="chat-msg"><strong style="color: #2ed573;">[Serveur] :</strong> Bienvenue ! Les messages s'affichent à partir de maintenant. 🚀</div>`;
+            } else {
+                boite.innerHTML = `<div class="chat-msg"><strong style="color: #2ed573;">[Serveur] :</strong> Bon retour ! Connexion en direct activée. 🔄</div>`;
+                
+                try {
+                    const { data, error } = await _supabase
+                        .from('messages')
+                        .select('nom, texte')
+                        .order('id', { ascending: true })
+                        .limit(50);
+
+                    if (error) {
+                        console.error("Erreur de chargement de l'historique :", error);
+                        return;
+                    }
+
+                    if (data && data.length > 0) {
+                        data.forEach(msg => {
+                            let couleurNom = (msg.nom === monNom) ? "#ffff00" : "#48dbfb";
+                            boite.innerHTML += `<div class="chat-msg"><strong style="color: ${couleurNom};">${msg.nom} :</strong> ${msg.texte}</div>`;
+                        });
+                    }
+                } catch (err) {
+                    console.error("Erreur réseau :", err);
+                }
+            }
+            boite.scrollTop = boite.scrollHeight;
+        }
+
+        async function envoyerMessage() {
+            let input = document.getElementById("input-message");
+            let texte = input.value.trim();
+            if (texte === "") return;
+
+            afficherUnMessage(monNom, texte);
+            input.value = "";
+
+            const { error } = await _supabase
+                .from('messages')
+                .insert([{ nom: monNom, texte: texte }]);
+
+            if (error) {
+                console.error("Erreur d'envoi vers Supabase :", error);
+            }
+        }
+
+        function verifierEntree(event) {
+            if (event.key === "Enter") {
+                envoyerMessage();
+            }
+        }
+
+        function gererMusique() {
+            const audio = document.getElementById("mon-audio");
+            const bouton = document.getElementById("btn-play-pause");
+            if (audio.paused) {
+                audio.play();
+                bouton.innerText = "Pause ⏸️";
+                bouton.style.backgroundColor = "#555555";
+            } else {
+                audio.pause();
+                bouton.innerText = "Play ▶️";
+                bouton.style.backgroundColor = "#ff007f";
+            }
+        }
+
+        // --- CODE DU MINI-JEU 1 : CLICKER ---
+        let score = 0;
+        let tempsRestant = 10;
+        let jeuEnCours = false;
+        let chrono;
+
+        function lancerJeu() {
+            if (jeuEnCours) return;
+            jeuEnCours = true;
+            score = 0;
+            tempsRestant = 10;
+            document.getElementById("current-score").innerText = score;
+            document.getElementById("game-timer").innerText = tempsRestant;
+            document.getElementById("start-game-btn").style.display = "none";
+            document.getElementById("target-btn").style.display = "block";
+            deplacerCible();
+
+            chrono = setInterval(function() {
+                tempsRestant--;
+                document.getElementById("game-timer").innerText = tempsRestant;
+                if (tempsRestant <= 0) { finDuJeu(); }
+            }, 1000);
+        }
+
+        function deplacerCible() {
+            const zone = document.getElementById("area");
+            const cible = document.getElementById("target-btn");
+            const maxX = zone.clientWidth - cible.clientWidth;
+            const maxY = zone.clientHeight - cible.clientHeight;
+            const randomX = Math.floor(Math.random() * maxX);
+            const randomY = Math.floor(Math.random() * maxY);
+            cible.style.left = randomX + "px";
+            cible.style.top = randomY + "px";
+        }
+
+        function clicCible() {
+            if (!jeuEnCours) return;
+            score++;
+            document.getElementById("current-score").innerText = score;
+            deplacerCible();
+        }
+
+        function finDuJeu() {
+            clearInterval(chrono);
+            jeuEnCours = false;
+            document.getElementById("target-btn").style.display = "none";
+            document.getElementById("start-game-btn").style.display = "inline-block";
+            document.getElementById("start-game-btn").innerText = "Rejouer ! 🔄";
+            alert("⏱️ Temps écoulé ! Ton score est de : " + score + " clics !");
+            
+            let ancienRecord = parseInt(localStorage.getItem("clickerHighScore") || 0);
+            if (score > ancienRecord) {
+                localStorage.setItem("clickerHighScore", score);
+                document.getElementById("high-score").innerText = score;
+                alert("👑 NOUVEAU RECORD ! Tu as géré !");
+            }
+        }
+
+        // --- CODE DU MINI-JEU 2 : LE JUSTE PRIX ---
+        let nombreSecret = 0;
+        let tentatives = 0;
+        let justePrixEnCours = false;
+
+        function demarrerJustePrix() {
+            nombreSecret = Math.floor(Math.random() * 100) + 1;
+            tentatives = 0;
+            justePrixEnCours = true;
+
+            document.getElementById("jp-tentatives").innerText = tentatives;
+            document.getElementById("jp-statut").innerText = "C'est parti ! Propose un nombre.";
+            document.getElementById("jp-statut").style.color = "#ffffff";
+            
+            document.getElementById("jp-input").disabled = false;
+            document.getElementById("jp-input").value = "";
+            document.getElementById("jp-input").focus();
+            document.getElementById("jp-btn").disabled = false;
+            
+            document.getElementById("jp-start-btn").innerText = "Réinitialiser 🔄";
+        }
+
+        function verifierProposition() {
+            if (!justePrixEnCours) return;
+
+            let input = document.getElementById("jp-input");
+            let proposition = parseInt(input.value);
+            let statut = document.getElementById("jp-statut");
+
+            if (isNaN(proposition) || proposition < 1 || proposition > 100) {
+                statut.innerText = "Mets un nombre entre 1 et 100 ! 🧐";
+                statut.style.color = "#ff4757";
+                return;
+            }
+
+            tentatives++;
+            document.getElementById("jp-tentatives").innerText = tentatives;
+
+            if (proposition < nombreSecret) {
+                statut.innerText = "C'est PLUS GRAND ! ⬆️";
+                statut.style.color = "#ff9f43";
+            } else if (proposition > nombreSecret) {
+                statut.innerText = "C'est PLUS PETIT ! ⬇️";
+                statut.style.color = "#48dbfb";
+            } else {
+                statut.innerText = `🎉 GAGNÉ en ${tentatives} coups ! Bravo !`;
+                statut.style.color = "#ffff00";
+                finDuJustePrix();
+            }
+
+            input.value = "";
+            input.focus();
+        }
+
+        function finDuJustePrix() {
+            justePrixEnCours = false;
+            document.getElementById("jp-input").disabled = true;
+            document.getElementById("jp-btn").disabled = true;
+            document.getElementById("jp-start-btn").innerText = "Rejouer ! 🔥";
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById("jp-input").addEventListener("keypress", function(event) {
+                if (event.key === "Enter") {
+                    verifierProposition();
+                }
+            });
+        });
+
+        // --- SCRIPT DU COMPTE À REBOURS ---
+        setInterval(function() {
+            const maintenant = new Date();
+            let anneeCible = maintenant.getFullYear();
+            let dateAnniv = new Date("June 19, " + anneeCible + " 00:00:00");
+
+            if (maintenant.getTime() > dateAnniv.getTime()) {
+                anneeCible = anneeCible + 1;
+                dateAnniv = new Date("June 19, " + anneeCible + " 00:00:00");
+            }
+
+            const distance = dateAnniv.getTime() - maintenant.getTime();
+            const jours = Math.floor(distance / (1000 * 60 * 60 * 24));
+            const heures = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+            const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+            const secondes = Math.floor((distance % (1000 * 60)) / 1000);
+
+            const age = 13 + (anneeCible - 2026);
+            document.getElementById("countdown-title").innerHTML = "Mon anniversaire (" + age + " ans) ! 🎂🎉";
+            document.getElementById("countdown").innerHTML = jours + "j " + heures + "h " + minutes + "m " + secondes + "s";
+        }, 1000);
+
+        function infosMetro() {
+            alert("🚇 [RATP] Info Trafic - Ligne Codeur92 :\n\n• Le trafic est totalement régulier.\n• Prochain arrêt de rame : Station 13 Ans (le 19 Juin) !\n• Voyageurs à bord : Vous ! 🎒");
+        }
+
+        function changerCouleur() {
+            document.querySelector("h1").style.color = "#FFD700";
+            alert("Le titre est devenu doré ! 🌟");
+        }
+
+        function basculerMode() {
+            document.body.classList.toggle("mode-clair");
+            localStorage.setItem("theme", document.body.classList.contains("mode-clair") ? "clair" : "sombre");
+        }
+    </script>
+</body>
+</html>
