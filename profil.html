@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Profil Utilisateur - Codeur92</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            background: linear-gradient(135deg, #1f1c2c, #928dab);
+            color: #ffffff;
+            font-family: 'Segoe UI', Arial, sans-serif;
+            text-align: center;
+            padding: 40px 20px;
+            margin: 0;
+            min-height: 100vh;
+        }
+        .container {
+            background: rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+        }
+        h1 { color: #00f5d4; margin-top: 0; }
+        .avatar-box {
+            font-size: 4rem;
+            background: rgba(255, 255, 255, 0.1);
+            width: 100px; height: 100px; line-height: 100px;
+            border-radius: 50%; margin: 0 auto 20px auto;
+            border: 2px solid #00f5d4;
+        }
+        .info-group { text-align: left; margin-bottom: 20px; }
+        .info-group label {
+            display: block; font-size: 0.85rem; color: #ff007f;
+            text-transform: uppercase; font-weight: bold; letter-spacing: 1px; margin-bottom: 5px;
+        }
+        .info-val {
+            background: rgba(255, 255, 255, 0.05); padding: 12px;
+            border-radius: 10px; font-size: 1.1rem; border-left: 4px solid #00f5d4;
+        }
+        .input-field {
+            width: 100%; padding: 12px; border-radius: 10px;
+            border: 1px solid rgba(255, 255, 255, 0.2); background: rgba(0, 0, 0, 0.3);
+            color: white; font-size: 1rem; box-sizing: border-box; outline: none; font-family: inherit;
+        }
+        button {
+            background-color: #007AFF; color: white; border: none; padding: 12px 25px;
+            font-size: 16px; border-radius: 25px; cursor: pointer; font-weight: bold; transition: 0.2s;
+        }
+        button:hover { transform: scale(1.05); background-color: #0056b3; }
+        .btn-back { background-color: #555555; margin-left: 10px; }
+        .btn-save { background-color: #ff007f; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="avatar-box" id="prof-avatar">👤</div>
+        <h1 id="titre-page">Chargement...</h1>
+
+        <div id="mode-vue">
+            <div class="info-group">
+                <label>Nom d'utilisateur</label>
+                <div class="info-val" id="vue-nom">...</div>
+            </div>
+            <div class="info-group">
+                <label>🎮 Compte Roblox</label>
+                <div class="info-val" id="vue-roblox">Non renseigné</div>
+            </div>
+            <div class="info-group">
+                <label>📝 Biographie / Description</label>
+                <div class="info-val" id="vue-bio" style="white-space: pre-wrap;">...</div>
+            </div>
+        </div>
+
+        <div id="mode-edition" style="display: none;">
+            <div class="info-group">
+                <label>Modifier mon pseudo / Prénom</label>
+                <input type="text" id="edit-nom" class="input-field">
+            </div>
+            <div class="info-group">
+                <label>🎮 Pseudo Roblox</label>
+                <input type="text" id="edit-roblox" class="input-field" placeholder="Ex: Codeur92_Pro">
+            </div>
+            <div class="info-group">
+                <label>📝 Ta Biographie Complète</label>
+                <textarea id="edit-bio" class="input-field" rows="4" placeholder="Parle de toi, de tes passions..."></textarea>
+            </div>
+            <button class="btn-save" onclick="sauvegarderProfil()">Enregistrer les infos 💾</button>
+        </div>
+
+        <div style="margin-top: 25px;">
+            <button id="btn-action-edit" onclick="activerModeEdition()" style="display: none;">Modifier mon profil ⚙️</button>
+            <button class="btn-back" onclick="window.location.href='index.html'">Retour au site 🏠</button>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = "https://wesdkbfbyelssqtbbjai.supabase.co";
+        const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indlc2RrYmZieWVsc3NxdGJiamFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDQwNDEsImV4cCI6MjA5NTM4MDA0MX0.kKZ3JrLcThrPaFzWCkXOSrOI6FMZ_TrGL9wqwxVizUs";
+        const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        const params = new URLSearchParams(window.location.search);
+        let nomProfil = params.get('user'); 
+        const monNomActuel = localStorage.getItem("prenomVisiteur");
+
+        window.onload = async function() {
+            if (!nomProfil) {
+                window.location.href = 'index.html';
+                return;
+            }
+
+            document.getElementById("titre-page").innerText = "Profil de " + nomProfil;
+            
+            // Si c'est mon propre profil, j'affiche enfin le bouton modifier
+            if (nomProfil.toLowerCase() === monNomActuel.toLowerCase()) {
+                document.getElementById("btn-action-edit").style.display = "inline-block";
+                document.getElementById("prof-avatar").innerText = "👑";
+            }
+
+            // Récupérer les données depuis Supabase
+            try {
+                const { data, error } = await _supabase
+                    .from('messages')
+                    .select('texte')
+                    .eq('nom', nomProfil)
+                    .like('texte', '%[PROFIL_DATA]%')
+                    .order('id', { ascending: false })
+                    .limit(1);
+
+                if (data && data.length > 0) {
+                    let cleanData = data[0].texte.replace("[PROFIL_DATA]", "");
+                    let profilJson = JSON.parse(cleanData);
+                    
+                    document.getElementById("vue-nom").innerText = nomProfil;
+                    document.getElementById("vue-roblox").innerText = profilJson.roblox || "Non renseigné";
+                    document.getElementById("vue-bio").innerText = profilJson.bio || "Aucune description pour le moment.";
+                } else {
+                    document.getElementById("vue-nom").innerText = nomProfil;
+                    document.getElementById("vue-bio").innerText = "Cet utilisateur n'a pas encore configuré sa bio.";
+                }
+            } catch(e) {
+                console.error(e);
+            }
+        };
+
+        function activerModeEdition() {
+            document.getElementById("mode-vue").style.display = "none";
+            document.getElementById("mode-edition").style.display = "block";
+            document.getElementById("btn-action-edit").style.display = "none";
+            document.getElementById("titre-page").innerText = "Modifier mon profil";
+
+            document.getElementById("edit-nom").value = monNomActuel;
+            document.getElementById("edit-roblox").value = document.getElementById("vue-roblox").innerText === "Non renseigné" ? "" : document.getElementById("vue-roblox").innerText;
+            document.getElementById("edit-bio").value = document.getElementById("vue-bio").innerText === "Cet utilisateur n'a pas encore configuré sa bio." ? "" : document.getElementById("vue-bio").innerText;
+        }
+
+        async function sauvegarderProfil() {
+            let nvNom = document.getElementById("edit-nom").value.trim();
+            let nvRoblox = document.getElementById("edit-roblox").value.trim();
+            let nvBio = document.getElementById("edit-bio").value.trim();
+
+            if (nvNom === "") { alert("Ton prénom ne peut pas être vide !"); return; }
+
+            let profilPayload = { roblox: nvRoblox, bio: nvBio };
+            let messageSecret = "[PROFIL_DATA]" + JSON.stringify(profilPayload);
+
+            // 1. Sauvegarder localement le nouveau prénom
+            localStorage.setItem("prenomVisiteur", nvNom);
+
+            // 2. Envoyer à Supabase
+            const { error } = await _supabase
+                .from('messages')
+                .insert([{ nom: nvNom, texte: messageSecret }]);
+
+            if (!error) {
+                alert("Profil mis à jour avec succès ! 🎉");
+                // 3. Forcer le rechargement de la page vers la bonne URL avec le nouveau nom
+                window.location.href = "profil.html?user=" + encodeURIComponent(nvNom);
+            } else {
+                alert("Erreur lors de l'enregistrement réseau.");
+            }
+        }
+    </script>
+</body>
+</html>

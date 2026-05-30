@@ -211,6 +211,14 @@
             font-size: 0.95rem;
             line-height: 1.4;
         }
+        .user-link {
+            text-decoration: underline;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .user-link:hover {
+            color: #00f5d4 !important;
+        }
         .chat-input-area {
             display: flex;
             gap: 10px;
@@ -306,7 +314,7 @@
             margin: 0;
         }
 
-        /* Responsive Mobile : l'un sous l'autre sur petit écran */
+        /* Responsive Mobile */
         @media (max-width: 800px) {
             .arcade-container {
                 flex-direction: column;
@@ -389,6 +397,9 @@
 
     <div class="chat-section">
         <h2 style="margin-top:0; color:#00f5d4; font-size: 1.5rem;">💬 Le Vrai Tchat En Direct 🌍</h2>
+        
+        <button onclick="ouvrirMonProfil()" style="padding: 8px 15px; font-size: 14px; background-color: #ff007f; margin-bottom: 12px; border-radius: 15px; cursor:pointer;">⚙️ Mon Profil Complet</button>
+        
         <div class="chat-box" id="box-messages">
             <div class="chat-msg"><strong style="color: #ff9f43;">[Système] :</strong> Connexion au serveur Supabase...</div>
         </div>
@@ -425,7 +436,7 @@
 
             <div style="margin-top: 15px;">
                 <input type="number" id="jp-input" min="1" max="100" style="padding: 10px; border-radius: 10px; border: none; width: 80px; font-size: 16px; text-align: center; outline: none;" placeholder="?" disabled>
-                <button class="btn-send" id="jp-btn" onclick="verifierProposition()" style="background-color: #ffffff; color: #11998e; box-shadow: none; vertical-align: middle;" disabled>Valider</button>
+                <button class="btn-send" id="jp-btn" onclick="verifierProposition()" style="background-color: #ffffff; color: #11998e; box-shadow: none; vertical-align: middle; padding: 8px 15px; font-size: 14px;" disabled>Valider</button>
             </div>
 
             <button class="btn-start" id="jp-start-btn" onclick="demarrerJustePrix()" style="margin-top: 15px; background-color: #ffffff; color: #11998e;">Lancer une partie ! 🎲</button>
@@ -434,14 +445,12 @@
     </div>
 
     <div class="train-zone">
-        <div class="train">🚂🚃🚃🚃🚃💨</div>
+        <div class="train">🚂🚃🚃rarr;🚃🚃💨</div>
     </div>
 
     <script>
-        // --- CONFIGURATION DE TA BASE DE DONNÉES SUPABASE ---
         const SUPABASE_URL = "https://wesdkbfbyelssqtbbjai.supabase.co";
         const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Indlc2RrYmZieWVsc3NxdGJiamFpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk4MDQwNDEsImV4cCI6MjA5NTM4MDA0MX0.kKZ3JrLcThrPaFzWCkXOSrOI6FMZ_TrGL9wqwxVizUs";
-        
         const _supabase = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
         let monNom = "Visiteur";
@@ -464,7 +473,7 @@
             } else {
                 let prenom = "";
                 while (prenom === "" || prenom === null) {
-                    prenom = prompt("Hé non ! Tu devez obligatoirement me donner ton prénom pour entrer : Envoie le blaze ! 🕶️");
+                    prenom = prompt("Hé non ! Tu dois obligatoirement me donner ton prénom pour entrer : Envoie le blaze ! 🕶️");
                 }
                 localStorage.setItem("prenomVisiteur", prenom);
                 monNom = prenom;
@@ -472,12 +481,14 @@
                 chargerAnciensMessages(true);
             }
 
-            // --- ÉCOUTE DU DIRECT (SANS BLOCAGE) ---
             _supabase
                 .channel('schema-db-changes')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
                     if (heureConnexion && payload.new.created_at && payload.new.created_at <= heureConnexion) {
                         return; 
+                    }
+                    if (payload.new.texte.startsWith("[PROFIL_DATA]")) {
+                        return;
                     }
                     if (payload.new.nom !== monNom) {
                         afficherUnMessage(payload.new.nom, payload.new.texte);
@@ -486,13 +497,21 @@
                 .subscribe();
         };
 
+        function voirProfil(nomCible) {
+            window.location.href = "profil.html?user=" + encodeURIComponent(nomCible);
+        }
+
+        function ouvrirMonProfil() {
+            window.location.href = "profil.html?user=" + encodeURIComponent(monNom);
+        }
+
         // --- FONCTIONS DU TCHAT ---
         function afficherUnMessage(nom, texte) {
             let boite = document.getElementById("box-messages");
             let couleurNom = (nom === monNom) ? "#ffff00" : "#48dbfb";
             let affichageNom = (nom === monNom) ? `${nom} (Toi)` : nom;
 
-            boite.innerHTML += `<div class="chat-msg"><strong style="color: ${couleurNom};">${affichageNom} :</strong> ${texte}</div>`;
+            boite.innerHTML += `<div class="chat-msg"><strong class="user-link" style="color: ${couleurNom};" onclick="voirProfil('${nom}')">${affichageNom} :</strong> ${texte}</div>`;
             boite.scrollTop = boite.scrollHeight;
         }
 
@@ -512,15 +531,14 @@
                         .order('id', { ascending: true })
                         .limit(50);
 
-                    if (error) {
-                        console.error("Erreur de chargement de l'historique :", error);
-                        return;
-                    }
+                    if (error) return;
 
                     if (data && data.length > 0) {
                         data.forEach(msg => {
-                            let couleurNom = (msg.nom === monNom) ? "#ffff00" : "#48dbfb";
-                            boite.innerHTML += `<div class="chat-msg"><strong style="color: ${couleurNom};">${msg.nom} :</strong> ${msg.texte}</div>`;
+                            if (!msg.texte.startsWith("[PROFIL_DATA]")) {
+                                let couleurNom = (msg.nom === monNom) ? "#ffff00" : "#48dbfb";
+                                boite.innerHTML += `<div class="chat-msg"><strong class="user-link" style="color: ${couleurNom};" onclick="voirProfil('${msg.nom}')">${msg.nom} :</strong> ${msg.texte}</div>`;
+                            }
                         });
                     }
                 } catch (err) {
@@ -538,19 +556,13 @@
             afficherUnMessage(monNom, texte);
             input.value = "";
 
-            const { error } = await _supabase
+            await _supabase
                 .from('messages')
                 .insert([{ nom: monNom, texte: texte }]);
-
-            if (error) {
-                console.error("Erreur d'envoi vers Supabase :", error);
-            }
         }
 
         function verifierEntree(event) {
-            if (event.key === "Enter") {
-                envoyerMessage();
-            }
+            if (event.key === "Enter") { envoyerMessage(); }
         }
 
         function gererMusique() {
@@ -567,7 +579,7 @@
             }
         }
 
-        // --- CODE DU MINI-JEU 1 : CLICKER ---
+        // --- MINI-JEU 1 : CLICKER ---
         let score = 0;
         let tempsRestant = 10;
         let jeuEnCours = false;
@@ -596,10 +608,8 @@
             const cible = document.getElementById("target-btn");
             const maxX = zone.clientWidth - cible.clientWidth;
             const maxY = zone.clientHeight - cible.clientHeight;
-            const randomX = Math.floor(Math.random() * maxX);
-            const randomY = Math.floor(Math.random() * maxY);
-            cible.style.left = randomX + "px";
-            cible.style.top = randomY + "px";
+            cible.style.left = Math.floor(Math.random() * maxX) + "px";
+            cible.style.top = Math.floor(Math.random() * maxY) + "px";
         }
 
         function clicCible() {
@@ -615,17 +625,17 @@
             document.getElementById("target-btn").style.display = "none";
             document.getElementById("start-game-btn").style.display = "inline-block";
             document.getElementById("start-game-btn").innerText = "Rejouer ! 🔄";
-            alert("⏱️ Temps écoulé ! Ton score est de : " + score + " clics !");
+            alert("⏱️ Temps écoulé ! Ton score : " + score + " clics !");
             
-            let ancienRecord = parseInt(localStorage.getItem("clickerHighScore") || 0);
-            if (score > ancienRecord) {
+            let record = parseInt(localStorage.getItem("clickerHighScore") || 0);
+            if (score > record) {
                 localStorage.setItem("clickerHighScore", score);
                 document.getElementById("high-score").innerText = score;
-                alert("👑 NOUVEAU RECORD ! Tu as géré !");
+                alert("👑 NOUVEAU RECORD !");
             }
         }
 
-        // --- CODE DU MINI-JEU 2 : LE JUSTE PRIX ---
+        // --- MINI-JEU 2 : LE JUSTE PRIX ---
         let nombreSecret = 0;
         let tentatives = 0;
         let justePrixEnCours = false;
@@ -634,32 +644,26 @@
             nombreSecret = Math.floor(Math.random() * 100) + 1;
             tentatives = 0;
             justePrixEnCours = true;
-
             document.getElementById("jp-tentatives").innerText = tentatives;
             document.getElementById("jp-statut").innerText = "C'est parti ! Propose un nombre.";
             document.getElementById("jp-statut").style.color = "#ffffff";
-            
             document.getElementById("jp-input").disabled = false;
             document.getElementById("jp-input").value = "";
             document.getElementById("jp-input").focus();
             document.getElementById("jp-btn").disabled = false;
-            
             document.getElementById("jp-start-btn").innerText = "Réinitialiser 🔄";
         }
 
         function verifierProposition() {
             if (!justePrixEnCours) return;
-
             let input = document.getElementById("jp-input");
             let proposition = parseInt(input.value);
             let statut = document.getElementById("jp-statut");
 
             if (isNaN(proposition) || proposition < 1 || proposition > 100) {
                 statut.innerText = "Mets un nombre entre 1 et 100 ! 🧐";
-                statut.style.color = "#ff4757";
                 return;
             }
-
             tentatives++;
             document.getElementById("jp-tentatives").innerText = tentatives;
 
@@ -670,62 +674,43 @@
                 statut.innerText = "C'est PLUS PETIT ! ⬇️";
                 statut.style.color = "#48dbfb";
             } else {
-                statut.innerText = `🎉 GAGNÉ en ${tentatives} coups ! Bravo !`;
+                statut.innerText = `🎉 GAGNÉ en ${tentatives} coups !`;
                 statut.style.color = "#ffff00";
-                finDuJustePrix();
+                justePrixEnCours = false;
+                document.getElementById("jp-input").disabled = true;
+                document.getElementById("jp-btn").disabled = true;
+                document.getElementById("jp-start-btn").innerText = "Rejouer ! 🔥";
             }
-
             input.value = "";
             input.focus();
         }
 
-        function finDuJustePrix() {
-            justePrixEnCours = false;
-            document.getElementById("jp-input").disabled = true;
-            document.getElementById("jp-btn").disabled = true;
-            document.getElementById("jp-start-btn").innerText = "Rejouer ! 🔥";
-        }
-
-        // Écouteur pour la touche Entrée sur le jeu du Juste Prix
         document.addEventListener("DOMContentLoaded", function() {
-            document.getElementById("jp-input").addEventListener("keypress", function(event) {
-                if (event.key === "Enter") {
-                    verifierProposition();
-                }
+            document.getElementById("jp-input").addEventListener("keypress", function(e) {
+                if (e.key === "Enter") verifierProposition();
             });
         });
 
-        // --- SCRIPT DU COMPTE À REBOURS ---
+        // --- COMPTE À REBOURS ---
         setInterval(function() {
             const maintenant = new Date();
             let anneeCible = maintenant.getFullYear();
             let dateAnniv = new Date("June 19, " + anneeCible + " 00:00:00");
-
             if (maintenant.getTime() > dateAnniv.getTime()) {
-                anneeCible = anneeCible + 1;
+                anneeCible++;
                 dateAnniv = new Date("June 19, " + anneeCible + " 00:00:00");
             }
-
             const distance = dateAnniv.getTime() - maintenant.getTime();
             const jours = Math.floor(distance / (1000 * 60 * 60 * 24));
             const heures = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
             const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
             const secondes = Math.floor((distance % (1000 * 60)) / 1000);
-
-            const age = 13 + (anneeCible - 2026);
-            document.getElementById("countdown-title").innerHTML = "Mon anniversaire (" + age + " ans) ! 🎂🎉";
+            document.getElementById("countdown-title").innerHTML = "Mon anniversaire (" + (13 + (anneeCible - 2026)) + " ans) ! 🎂🎉";
             document.getElementById("countdown").innerHTML = jours + "j " + heures + "h " + minutes + "m " + secondes + "s";
         }, 1000);
 
-        function infosMetro() {
-            alert("🚇 [RATP] Info Trafic - Ligne Codeur92 :\n\n• Le trafic est totalement régulier.\n• Prochain arrêt de rame : Station 13 Ans (le 19 Juin) !\n• Voyageurs à bord : Vous ! 🎒");
-        }
-
-        function changerCouleur() {
-            document.querySelector("h1").style.color = "#FFD700";
-            alert("Le titre est devenu doré ! 🌟");
-        }
-
+        function infosMetro() { alert("🚇 Trafic régulier sur la Ligne Codeur92 !"); }
+        function changerCouleur() { document.querySelector("h1").style.color = "#FFD700"; }
         function basculerMode() {
             document.body.classList.toggle("mode-clair");
             localStorage.setItem("theme", document.body.classList.contains("mode-clair") ? "clair" : "sombre");
