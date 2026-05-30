@@ -242,16 +242,15 @@
         }
         .btn-send:hover { background-color: #00c4a9; transform: scale(1.05); }
 
-        /* --- STYLE DU MINI-JEU --- */
+        /* --- STYLE DES MINI-JEUX --- */
         .game-section {
             background: linear-gradient(135deg, #ff007f, #7b2cbf);
             border-radius: 20px;
             max-width: 500px;
-            margin: 40px auto;
+            margin: 0;
             padding: 20px;
             box-shadow: 0 10px 30px rgba(255, 0, 127, 0.3);
             color: white;
-            margin-bottom: 100px;
         }
         .game-area {
             position: relative;
@@ -289,6 +288,34 @@
             background-color: #ffffff;
             color: #7b2cbf;
             font-weight: bold;
+        }
+
+        /* --- ALIGNEMENT CÔTE À CÔTE DE L'ARCADE --- */
+        .arcade-container {
+            display: flex;
+            flex-direction: row;
+            justify-content: center;
+            gap: 20px;
+            max-width: 1100px;
+            margin: 40px auto 100px auto;
+            padding: 0 20px;
+        }
+        .arcade-container .game-section {
+            flex: 1;
+            max-width: 500px;
+            margin: 0;
+        }
+
+        /* Responsive Mobile : l'un sous l'autre sur petit écran */
+        @media (max-width: 800px) {
+            .arcade-container {
+                flex-direction: column;
+                align-items: center;
+            }
+            .arcade-container .game-section {
+                width: 100%;
+                margin-bottom: 20px;
+            }
         }
 
         /* --- ANIMATION DU TRAIN EN ARRIÈRE-PLAN --- */
@@ -371,18 +398,39 @@
         </div>
     </div>
 
-    <div class="game-section">
-        <h2>🎮 Réflexe Clicker Challenge</h2>
-        <div class="game-stats">
-            <div>Score : <span id="current-score">0</span></div>
-            <div>Temps : <span id="game-timer">10</span>s</div>
-            <div>Record : <span id="high-score">0</span>🏆</div>
+    <div class="arcade-container">
+
+        <div class="game-section">
+            <h2>🎮 Réflexe Clicker Challenge</h2>
+            <div class="game-stats">
+                <div>Score : <span id="current-score">0</span></div>
+                <div>Temps : <span id="game-timer">10</span>s</div>
+                <div>Record : <span id="high-score">0</span>🏆</div>
+            </div>
+            <button class="btn-start" id="start-game-btn" onclick="lancerJeu()">Lancer la partie ! 🔥</button>
+            
+            <div class="game-area" id="area">
+                <button id="target-btn" onclick="clicCible()">CLIQUE ICI !</button>
+            </div>
         </div>
-        <button class="btn-start" id="start-game-btn" onclick="lancerJeu()">Lancer la partie ! 🔥</button>
-        
-        <div class="game-area" id="area">
-            <button id="target-btn" onclick="clicCible()">CLIQUE ICI !</button>
+
+        <div class="game-section" style="background: linear-gradient(135deg, #11998e, #38ef7d); box-shadow: 0 10px 30px rgba(56, 239, 125, 0.3);">
+            <h2>🕹️ Devine le Nombre Magique</h2>
+            <p>Trouve le nombre secret entre 1 et 100 !</p>
+            
+            <div class="game-stats">
+                <div>Tentatives : <span id="jp-tentatives">0</span></div>
+                <div>Statut : <span id="jp-statut" style="color: #ffff00;">En attente...</span></div>
+            </div>
+
+            <div style="margin-top: 15px;">
+                <input type="number" id="jp-input" min="1" max="100" style="padding: 10px; border-radius: 10px; border: none; width: 80px; font-size: 16px; text-align: center; outline: none;" placeholder="?" disabled>
+                <button class="btn-send" id="jp-btn" onclick="verifierProposition()" style="background-color: #ffffff; color: #11998e; box-shadow: none; vertical-align: middle;" disabled>Valider</button>
+            </div>
+
+            <button class="btn-start" id="jp-start-btn" onclick="demarrerJustePrix()" style="margin-top: 15px; background-color: #ffffff; color: #11998e;">Lancer une partie ! 🎲</button>
         </div>
+
     </div>
 
     <div class="train-zone">
@@ -428,7 +476,6 @@
             _supabase
                 .channel('schema-db-changes')
                 .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages' }, payload => {
-                    // Filtrage intelligent pour les nouveaux arrivants
                     if (heureConnexion && payload.new.created_at && payload.new.created_at <= heureConnexion) {
                         return; 
                     }
@@ -456,7 +503,6 @@
                 heureConnexion = new Date().toISOString();
                 boite.innerHTML = `<div class="chat-msg"><strong style="color: #2ed573;">[Serveur] :</strong> Bienvenue ! Les messages s'affichent à partir de maintenant. 🚀</div>`;
             } else {
-                // On débloque l'affichage directement avant même d'attendre la réponse
                 boite.innerHTML = `<div class="chat-msg"><strong style="color: #2ed573;">[Serveur] :</strong> Bon retour ! Connexion en direct activée. 🔄</div>`;
                 
                 try {
@@ -489,11 +535,9 @@
             let texte = input.value.trim();
             if (texte === "") return;
 
-            // Affichage instantané sur ton écran (Zéro latence)
             afficherUnMessage(monNom, texte);
             input.value = "";
 
-            // Envoi en arrière-plan vers Supabase
             const { error } = await _supabase
                 .from('messages')
                 .insert([{ nom: monNom, texte: texte }]);
@@ -523,7 +567,7 @@
             }
         }
 
-        // --- CODE DU MINI-JEU ---
+        // --- CODE DU MINI-JEU 1 : CLICKER ---
         let score = 0;
         let tempsRestant = 10;
         let jeuEnCours = false;
@@ -580,6 +624,76 @@
                 alert("👑 NOUVEAU RECORD ! Tu as géré !");
             }
         }
+
+        // --- CODE DU MINI-JEU 2 : LE JUSTE PRIX ---
+        let nombreSecret = 0;
+        let tentatives = 0;
+        let justePrixEnCours = false;
+
+        function demarrerJustePrix() {
+            nombreSecret = Math.floor(Math.random() * 100) + 1;
+            tentatives = 0;
+            justePrixEnCours = true;
+
+            document.getElementById("jp-tentatives").innerText = tentatives;
+            document.getElementById("jp-statut").innerText = "C'est parti ! Propose un nombre.";
+            document.getElementById("jp-statut").style.color = "#ffffff";
+            
+            document.getElementById("jp-input").disabled = false;
+            document.getElementById("jp-input").value = "";
+            document.getElementById("jp-input").focus();
+            document.getElementById("jp-btn").disabled = false;
+            
+            document.getElementById("jp-start-btn").innerText = "Réinitialiser 🔄";
+        }
+
+        function verifierProposition() {
+            if (!justePrixEnCours) return;
+
+            let input = document.getElementById("jp-input");
+            let proposition = parseInt(input.value);
+            let statut = document.getElementById("jp-statut");
+
+            if (isNaN(proposition) || proposition < 1 || proposition > 100) {
+                statut.innerText = "Mets un nombre entre 1 et 100 ! 🧐";
+                statut.style.color = "#ff4757";
+                return;
+            }
+
+            tentatives++;
+            document.getElementById("jp-tentatives").innerText = tentatives;
+
+            if (proposition < nombreSecret) {
+                statut.innerText = "C'est PLUS GRAND ! ⬆️";
+                statut.style.color = "#ff9f43";
+            } else if (proposition > nombreSecret) {
+                statut.innerText = "C'est PLUS PETIT ! ⬇️";
+                statut.style.color = "#48dbfb";
+            } else {
+                statut.innerText = `🎉 GAGNÉ en ${tentatives} coups ! Bravo !`;
+                statut.style.color = "#ffff00";
+                finDuJustePrix();
+            }
+
+            input.value = "";
+            input.focus();
+        }
+
+        function finDuJustePrix() {
+            justePrixEnCours = false;
+            document.getElementById("jp-input").disabled = true;
+            document.getElementById("jp-btn").disabled = true;
+            document.getElementById("jp-start-btn").innerText = "Rejouer ! 🔥";
+        }
+
+        // Écouteur pour la touche Entrée sur le jeu du Juste Prix
+        document.addEventListener("DOMContentLoaded", function() {
+            document.getElementById("jp-input").addEventListener("keypress", function(event) {
+                if (event.key === "Enter") {
+                    verifierProposition();
+                }
+            });
+        });
 
         // --- SCRIPT DU COMPTE À REBOURS ---
         setInterval(function() {
